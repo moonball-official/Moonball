@@ -1,0 +1,131 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --gold: 35 90% 55%;        /* #F5A623 */
+  --gold-light: 42 100% 65%; /* #FFC94D */
+  --gold-dark: 37 91% 43%;   /* #D4880A */
+  
+  --blue: 217 91% 60%;       /* #3B82F6 */
+  --blue-light: 214 94% 68%; /* #60A5FA */
+  --blue-dark: 221 83% 53%;  /* #2563EB */
+  
+  --bg: 225 35% 7%;          /* #0B0E17 */
+  --bg-card: 225 36% 11%;    /* rgba(14,18,30,0.95) */
+  --bg-card-alt: 228 36% 11%; /* rgba(18,22,38,0.92) */
+  
+  --text-primary: 38 41% 88%;   /* #F0E6D3 */
+  --text-secondary: 218 16% 50%; /* #6B7A94 */
+  --text-muted: 223 25% 30%;     /* #3A4560 */
+
+  /* Shadows/Glows used in custom classes */
+  --glow-gold: 35 90% 55%;
+  --glow-blue: 217 91% 60%;
+}
+
+@layer base {
+  body {
+    @apply bg-[hsl(var(--bg))] text-[hsl(var(--text-primary))] font-['Rajdhani'];
+    overflow-x: hidden;
+  }
+  
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar {
+    width: 0px;
+    background: transparent;
+  }
+}
+
+@layer utilities {
+  .font-orbitron {
+    font-family: 'Montserrat', sans-serif;
+  }
+  .font-mono-tech {
+    font-family: 'Nunito Sans', sans-serif;
+  }
+  .font-rajdhani {
+    font-family: 'Rajdhani', sans-serif;
+  }
+  
+  .text-gold { color: hsl(var(--gold)); }
+  .text-gold-light { color: hsl(var(--gold-light)); }
+  .text-blue { color: hsl(var(--blue)); }
+  .bg-gold\/10 { background-color: hsla(var(--gold), 0.1); }
+  .bg-blue\/10 { background-color: hsla(var(--blue), 0.1); }
+  .border-gold\/20 { border-color: hsla(var(--gold), 0.2); }
+}
+
+/* Animations */
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 8px hsla(var(--glow-gold), 0.3); }
+  50% { box-shadow: 0 0 24px hsla(var(--glow-gold), 0.3), 0 0 48px hsla(var(--glow-blue), 0.3); }
+}
+
+@keyframes pulse-glow-blue {
+  0%, 100% { box-shadow: 0 0 8px hsla(var(--glow-blue), 0.3); }
+  50% { box-shadow: 0 0 20px hsla(var(--glow-blue), 0.3); }
+}
+
+@keyframes scan-line {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+@keyframes boot-text {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes countdown-pulse {
+  0%, 100% { text-shadow: 0 0 10px hsla(var(--glow-gold), 0.3); }
+  50% { text-shadow: 0 0 25px hsla(var(--glow-gold), 0.3); }
+}
+
+@keyframes logo-glow {
+  0%, 100% { filter: drop-shadow(0 0 6px hsla(var(--glow-gold), 0.3)); }
+  50% { filter: drop-shadow(0 0 18px hsla(var(--glow-gold), 0.3)) drop-shadow(0 0 30px hsla(var(--glow-blue), 0.3)); }
+}
+
+.animate-scan-line {
+  animation: scan-line 8s linear infinite;
+}
+
+.animate-fade-up {
+  animation: fade-up 0.6s ease forwards;
+}
+
+.animate-blink {
+  animation: blink 2s infinite;
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-logo-glow {
+  animation: logo-glow 4s ease-in-out infinite;
+}
+
+input[data-testid^="input-sim"]::placeholder {
+  color: rgba(150, 150, 150, 0.5);
+}
+
+.animate-boot-text {
+  animation: boot-text 0.3s ease forwards;
+}
