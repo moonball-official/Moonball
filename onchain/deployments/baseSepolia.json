@@ -1,0 +1,10 @@
+{
+  "network": "baseSepolia",
+  "usdc": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+  "oracle": "0xf3A4796733DB128FDf8954Ae202a35DC37EFa347",
+  "moon": "0x2F654334f6f925b835E7Aab5C5C5c04b98B6bFe7",
+  "updater": "0xa51690f5C451f428CcBDa048b4c720EA4962Ee5E",
+  "treasury": "0xB2cb3851d8055bA6aA8Cf7E548c1211D475e0d29",
+  "staleness": 14400,
+  "deployedAt": "2026-06-08T01:24:24.883Z"
+}
