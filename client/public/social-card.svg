@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0B0E17"/>
+      <stop offset="100%" style="stop-color:#111827"/>
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#F5C842"/>
+      <stop offset="100%" style="stop-color:#F5A623"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="8" result="coloredBlur"/>
+      <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg)"/>
+
+  <!-- Grid lines -->
+  <line x1="0" y1="630" x2="1200" y2="0" stroke="#1E293B" stroke-width="1" opacity="0.5"/>
+  <line x1="0" y1="315" x2="1200" y2="315" stroke="#1E293B" stroke-width="1" opacity="0.3"/>
+  <line x1="600" y1="0" x2="600" y2="630" stroke="#1E293B" stroke-width="1" opacity="0.3"/>
+
+  <!-- Gold accent bar top -->
+  <rect x="0" y="0" width="1200" height="4" fill="url(#goldGrad)"/>
+
+  <!-- Moon logo circle -->
+  <circle cx="140" cy="315" r="72" fill="none" stroke="#F5A623" stroke-width="2.5" opacity="0.9" filter="url(#glow)"/>
+  <circle cx="140" cy="315" r="56" fill="none" stroke="#F5A623" stroke-width="1" opacity="0.4"/>
+  <circle cx="140" cy="315" r="36" fill="#F5A62320"/>
+  <!-- Moon crescent -->
+  <path d="M140 255 A60 60 0 0 1 140 375 A42 42 0 0 0 140 255Z" fill="#F5A623" opacity="0.85"/>
+
+  <!-- Main title -->
+  <text x="240" y="285" font-family="Arial Black, sans-serif" font-size="64" font-weight="900" fill="url(#goldGrad)" letter-spacing="4">MOONBALL</text>
+  <text x="240" y="345" font-family="Arial, sans-serif" font-size="32" font-weight="400" fill="#94A3B8" letter-spacing="8">PROTOCOL</text>
+
+  <!-- Divider -->
+  <rect x="240" y="368" width="480" height="2" fill="url(#goldGrad)" opacity="0.6"/>
+
+  <!-- Subtitle -->
+  <text x="240" y="410" font-family="Arial, sans-serif" font-size="22" fill="#CBD5E1" letter-spacing="1">Live Powerball Jackpot Dashboard</text>
+  <text x="240" y="445" font-family="Arial, sans-serif" font-size="20" fill="#64748B" letter-spacing="1">Oracle Reference · MOON Token · Base Chain</text>
+
+  <!-- Stats row -->
+  <rect x="240" y="490" width="180" height="80" rx="8" fill="#0F172A" stroke="#1E293B" stroke-width="1"/>
+  <text x="330" y="525" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#64748B" letter-spacing="2">DRAW SCHEDULE</text>
+  <text x="330" y="552" text-anchor="middle" font-family="Arial Black, sans-serif" font-size="18" fill="#fff">Mon·Wed·Sat</text>
+
+  <rect x="438" y="490" width="180" height="80" rx="8" fill="#0F172A" stroke="#1E293B" stroke-width="1"/>
+  <text x="528" y="525" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#64748B" letter-spacing="2">SOURCES</text>
+  <text x="528" y="552" text-anchor="middle" font-family="Arial Black, sans-serif" font-size="18" fill="#fff">4 Providers</text>
+
+  <rect x="636" y="490" width="180" height="80" rx="8" fill="#0F172A" stroke="#1E293B" stroke-width="1"/>
+  <text x="726" y="525" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#64748B" letter-spacing="2">NETWORK</text>
+  <text x="726" y="552" text-anchor="middle" font-family="Arial Black, sans-serif" font-size="18" fill="#F5A623">Base</text>
+
+  <!-- URL -->
+  <text x="1160" y="610" text-anchor="end" font-family="Arial, sans-serif" font-size="18" fill="#334155">moonball.replit.app</text>
+</svg>
