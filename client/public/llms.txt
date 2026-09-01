@@ -1,0 +1,13 @@
+# Moonball Protocol
+
+> Moonball is a real-time Powerball jackpot tracking dashboard with a sci-fi/cyberpunk theme. It monitors jackpot cycles, draws countdown timers, displays winning numbers, and presents historical jackpot growth charts.
+
+## Public Pages
+
+- [Home](https://moonball.replit.app/): Live jackpot dashboard with countdown timer, winning numbers, and multi-cycle growth chart.
+- [Protocol](https://moonball.replit.app/protocol): The Moonball on-chain protocol — MOON token mechanics and DEX event-market design.
+- [Technical Paper](https://moonball.replit.app/technical-paper): In-depth technical paper covering the Moonball system architecture and methodology.
+
+## About
+
+Moonball tracks Powerball lottery jackpot cycles and presents the data through a sci-fi/cyberpunk-themed dashboard. It uses a multi-source consensus engine to verify jackpot values and automatically archives completed cycles.
