@@ -1,0 +1,23 @@
+{
+  "status": "recovered",
+  "architecture": "moonball-v1",
+  "network": "baseSepolia",
+  "deployer": "0xa51690f5C451f428CcBDa048b4c720EA4962Ee5E",
+  "usdc": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+  "oracle": "0x67B5b3147072bd13D4bA41eCF7f7b3531CED7EEE",
+  "owner": "0xa51690f5C451f428CcBDa048b4c720EA4962Ee5E",
+  "updater": "0xa51690f5C451f428CcBDa048b4c720EA4962Ee5E",
+  "staleness": 14400,
+  "recipient": "0xa51690f5C451f428CcBDa048b4c720EA4962Ee5E",
+  "safe": null,
+  "oracleTransactionHash": "0x8573445ef4ba14c061c116f0fe92f57d07b34c8ac14eff11d46b7e04771e6e45",
+  "oracleDeploymentNonce": 12,
+  "oracleDeploymentBlock": 46660003,
+  "oracleReceiptStatus": 1,
+  "recordedAt": "2026-09-11T01:10:37.429Z",
+  "failure": "Oracle deployment mined successfully; the immediate schema read returned empty RPC data before MOON deployment.",
+  "moon": "0x70171D11Dfe7791431F06c8E1e7837517394D58D",
+  "moonTransactionHash": "0xb1168d26a58fecbf06110756b9ed1434377debc489f618347b644be68ca81cca",
+  "moonDeploymentNonce": 13,
+  "recoveredAt": "2026-09-11T01:26:27.793Z"
+}

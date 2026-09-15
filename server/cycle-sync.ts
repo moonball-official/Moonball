@@ -140,6 +140,10 @@ export async function syncCycleState(): Promise<void> {
     if (!jackpotRow) return;
 
     const liveData = await fetchLivePowerballData(jackpotRow.cycleStart, jackpotRow.estimated);
+    if (liveData.verificationStatus !== "verified") {
+      console.warn("[cycle-sync] Skipping state mutation: jackpot is not consensus-verified.");
+      return;
+    }
     const liveEstimated = liveData.estimated;
     const storedEstimated = jackpotRow.estimated;
 

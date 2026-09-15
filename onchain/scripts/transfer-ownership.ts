@@ -1,6 +1,5 @@
 /**
- * Transfers oracle ownership to a Safe (or any multisig/timelock) once the
- * deployment is verified and operating correctly.
+ * Starts the oracle's two-step ownership transfer to a Safe (or timelock).
  *
  * In V2 the MoonballToken is an immutable, ownerless, fixed-supply ERC-20 — it
  * has no admin to transfer. The only privileged surface is the JackpotOracle:
@@ -25,6 +24,9 @@ function oracleFromDeployments(): string | undefined {
   const file = path.join(__dirname, "..", "deployments", `${network.name}.json`);
   if (!fs.existsSync(file)) return undefined;
   const d = JSON.parse(fs.readFileSync(file, "utf8"));
+  if (d.status === "deprecated") {
+    throw new Error("Refusing to use a deprecated deployment record.");
+  }
   return d.oracle;
 }
 
@@ -52,19 +54,38 @@ async function main() {
   const target = safe.toLowerCase();
   const eq = (a: string, b: string) => a.toLowerCase() === b;
 
-  // Idempotent: a partially-completed run can be safely re-run.
+  // Idempotent: a partially-completed run can be safely re-run. A production
+  // Safe must execute acceptOwnership() as a separate Safe transaction.
   const oracleOwner = (await oracle.owner()).toLowerCase();
   if (eq(oracleOwner, target)) {
     console.log("• Oracle already owned by Safe, skipping.");
-  } else if (eq(oracleOwner, me)) {
-    console.log("→ Transferring oracle ownership to Safe…");
-    await (await oracle.transferOwnership(safe)).wait();
   } else {
-    console.log(`⚠ Oracle owner is ${oracleOwner}, not the signer — cannot transfer.`);
+    const pendingOwner = (await oracle.pendingOwner()).toLowerCase();
+    if (!eq(pendingOwner, target)) {
+      if (!eq(oracleOwner, me)) {
+        throw new Error(`Oracle owner is ${oracleOwner}, not the signer; cannot start transfer.`);
+      }
+      console.log("→ Starting oracle ownership transfer to Safe…");
+      await (await oracle.transferOwnership(safe)).wait();
+    } else {
+      console.log("• Safe is already the pending owner.");
+    }
+
+    if (eq(me, target)) {
+      console.log("→ Target owner is this signer; accepting ownership…");
+      await (await oracle.acceptOwnership()).wait();
+    } else {
+      const calldata = oracle.interface.encodeFunctionData("acceptOwnership");
+      console.log("\nPending action: submit this transaction through the Safe:");
+      console.log(`  to:   ${oracleAddress}`);
+      console.log(`  data: ${calldata}`);
+      console.log("Ownership is NOT complete until the Safe executes it.");
+    }
   }
 
-  console.log("\n✓ Done. Verify on-chain:");
+  console.log("\nCurrent on-chain state:");
   console.log(`  oracle.owner   = ${await oracle.owner()}`);
+  console.log(`  pendingOwner   = ${await oracle.pendingOwner()}`);
   console.log(`  oracle.updater = ${await oracle.authorizedUpdater()} (bridge keeper, unchanged)`);
   console.log("  token          = immutable, ownerless (nothing to transfer)");
 }

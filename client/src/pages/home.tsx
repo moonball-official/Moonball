@@ -1572,7 +1572,7 @@ export default function Home() {
               },
               {
                 q: "Does the treasury protect the price?",
-                a: "No. The treasury funds liquidity, the oracle, and operations. It never buys back or defends a price level.",
+                a: "No. V1 has no automatic, mandatory, or price-defense buyback, and the treasury does not guarantee a price. Any future discretionary treasury action requires separate governance and review.",
               },
               {
                 q: "What happens when someone wins the jackpot?",

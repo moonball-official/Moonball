@@ -38,9 +38,13 @@
 import { ethers, network } from "hardhat";
 import * as fs from "fs";
 import * as path from "path";
+import { writeDeploymentRecord } from "./deployment-record";
 
 const DAY = 24 * 60 * 60;
 const WAD = 10n ** 18n;
+const TOTAL_SUPPLY = 100_000_000n * WAD;
+const MAX_VESTING_DAYS = 36_500;
+const MAX_VESTING_START = 4_102_444_800; // 2100-01-01 UTC
 
 function deploymentsFile(): string {
   return path.join(__dirname, "..", "deployments", `${network.name}.json`);
@@ -49,11 +53,46 @@ function deploymentsFile(): string {
 function moonFromDeployments(): string | undefined {
   const file = deploymentsFile();
   if (!fs.existsSync(file)) return undefined;
-  return JSON.parse(fs.readFileSync(file, "utf8")).moon;
+  const deployment = JSON.parse(fs.readFileSync(file, "utf8"));
+  if (deployment.status === "deprecated") {
+    throw new Error("Refusing to use a deprecated deployment record.");
+  }
+  return deployment.moon;
 }
 
 function fmt(wad: bigint): string {
   return ethers.formatEther(wad);
+}
+
+function wholeTokens(name: string, value: string | undefined, fallback: string): bigint {
+  const raw = value ?? fallback;
+  if (!/^\d+$/.test(raw)) throw new Error(`${name} must be a positive whole-token amount.`);
+  const parsed = BigInt(raw);
+  if (parsed <= 0n) throw new Error(`${name} must be greater than zero.`);
+  return parsed;
+}
+
+function scheduleDays(
+  name: string,
+  value: string | undefined,
+  fallback: number,
+  allowZero: boolean
+): number {
+  const parsed = Number(value ?? fallback);
+  const minimum = allowZero ? 0 : 1;
+  if (!Number.isSafeInteger(parsed) || parsed < minimum || parsed > MAX_VESTING_DAYS) {
+    throw new Error(
+      `${name} must be a whole number from ${minimum} through ${MAX_VESTING_DAYS}.`
+    );
+  }
+  return parsed;
+}
+
+function beneficiary(name: string, value: string): string {
+  if (!ethers.isAddress(value)) throw new Error(`${name} contains an invalid address: ${value}`);
+  const normalized = ethers.getAddress(value);
+  if (normalized === ethers.ZeroAddress) throw new Error(`${name} cannot contain the zero address.`);
+  return normalized;
 }
 
 async function main() {
@@ -69,8 +108,10 @@ async function main() {
   }
 
   const start = Number(process.env.VESTING_START || Math.floor(Date.now() / 1000));
-  if (!Number.isFinite(start) || start <= 0) {
-    throw new Error("VESTING_START must be a positive unix timestamp (seconds).");
+  if (!Number.isSafeInteger(start) || start <= 0 || start > MAX_VESTING_START) {
+    throw new Error(
+      "VESTING_START must be a positive whole unix timestamp no later than 2100-01-01."
+    );
   }
 
   console.log(`Network:  ${network.name}`);
@@ -80,6 +121,15 @@ async function main() {
   if (dryRun) console.log("** DRY RUN — no transactions will be sent **");
 
   const moon = await ethers.getContractAt("MoonballToken", moonAddress);
+  const moonCode = await ethers.provider.getCode(moonAddress);
+  if (moonCode === "0x") throw new Error("MOON_ADDRESS does not contain contract code.");
+  const [reportedSupply, declaredSupply] = await Promise.all([
+    moon.totalSupply(),
+    moon.TOTAL_SUPPLY(),
+  ]);
+  if (reportedSupply !== TOTAL_SUPPLY || declaredSupply !== TOTAL_SUPPLY) {
+    throw new Error("MOON_ADDRESS is not the fixed-supply 100,000,000 MOON contract.");
+  }
 
   // ── Build the schedule plan ───────────────────────────────────────────
   type Plan = {
@@ -94,12 +144,12 @@ async function main() {
   // Founder
   const founder = process.env.FOUNDER_ADDRESS;
   if (founder) {
-    if (!ethers.isAddress(founder)) throw new Error(`FOUNDER_ADDRESS invalid: ${founder}`);
-    const amount = BigInt(process.env.FOUNDER_AMOUNT || 20_000_000);
-    const cliffDays = Number(process.env.FOUNDER_CLIFF_DAYS || 365);
-    const vestDays = Number(process.env.FOUNDER_VEST_DAYS || 1460);
+    const founderAddress = beneficiary("FOUNDER_ADDRESS", founder);
+    const amount = wholeTokens("FOUNDER_AMOUNT", process.env.FOUNDER_AMOUNT, "20000000");
+    const cliffDays = scheduleDays("FOUNDER_CLIFF_DAYS", process.env.FOUNDER_CLIFF_DAYS, 365, true);
+    const vestDays = scheduleDays("FOUNDER_VEST_DAYS", process.env.FOUNDER_VEST_DAYS, 1460, false);
     if (cliffDays > vestDays) throw new Error("FOUNDER_CLIFF_DAYS must be <= FOUNDER_VEST_DAYS.");
-    plans.push({ label: "Founder", beneficiary: founder, amountWad: amount * WAD, cliffDays, vestDays });
+    plans.push({ label: "Founder", beneficiary: founderAddress, amountWad: amount * WAD, cliffDays, vestDays });
   } else {
     console.log("• FOUNDER_ADDRESS unset — skipping founder bucket.");
   }
@@ -107,12 +157,19 @@ async function main() {
   // Investors
   const investorsRaw = (process.env.INVESTOR_ADDRESSES || "").trim();
   if (investorsRaw) {
-    const addrs = investorsRaw.split(",").map((a) => a.trim()).filter(Boolean);
-    for (const a of addrs) {
-      if (!ethers.isAddress(a)) throw new Error(`INVESTOR_ADDRESSES contains invalid address: ${a}`);
+    const addrs = investorsRaw
+      .split(",")
+      .map((address) => address.trim())
+      .filter(Boolean)
+      .map((address) => beneficiary("INVESTOR_ADDRESSES", address));
+    if (addrs.length === 0) {
+      throw new Error("INVESTOR_ADDRESSES must contain at least one address.");
     }
-    const cliffDays = Number(process.env.INVESTOR_CLIFF_DAYS || 180);
-    const vestDays = Number(process.env.INVESTOR_VEST_DAYS || 730);
+    if (new Set(addrs.map((address) => address.toLowerCase())).size !== addrs.length) {
+      throw new Error("INVESTOR_ADDRESSES must not contain duplicates.");
+    }
+    const cliffDays = scheduleDays("INVESTOR_CLIFF_DAYS", process.env.INVESTOR_CLIFF_DAYS, 180, true);
+    const vestDays = scheduleDays("INVESTOR_VEST_DAYS", process.env.INVESTOR_VEST_DAYS, 730, false);
     if (cliffDays > vestDays) throw new Error("INVESTOR_CLIFF_DAYS must be <= INVESTOR_VEST_DAYS.");
 
     let amountsWad: bigint[];
@@ -123,11 +180,14 @@ async function main() {
           `INVESTOR_AMOUNTS has ${parts.length} entries but INVESTOR_ADDRESSES has ${addrs.length}.`
         );
       }
-      amountsWad = parts.map((p) => BigInt(p) * WAD);
+      amountsWad = parts.map((part, index) =>
+        wholeTokens(`INVESTOR_AMOUNTS[${index}]`, part, "0") * WAD
+      );
     } else {
       // Split INVESTOR_TOTAL evenly; the remainder (from integer division) is
       // added to the last investor so the bucket sums exactly.
-      const total = BigInt(process.env.INVESTOR_TOTAL || 15_000_000) * WAD;
+      const total =
+        wholeTokens("INVESTOR_TOTAL", process.env.INVESTOR_TOTAL, "15000000") * WAD;
       const each = total / BigInt(addrs.length);
       amountsWad = addrs.map(() => each);
       amountsWad[amountsWad.length - 1] += total - each * BigInt(addrs.length);
@@ -149,9 +209,18 @@ async function main() {
   if (plans.length === 0) {
     throw new Error("Nothing to do: set FOUNDER_ADDRESS and/or INVESTOR_ADDRESSES.");
   }
+  if (
+    new Set(plans.map((plan) => plan.beneficiary.toLowerCase())).size !==
+    plans.length
+  ) {
+    throw new Error("Each vesting beneficiary must appear only once across all plans.");
+  }
 
   // ── Validate the signer holds enough MOON ─────────────────────────────
   const totalNeeded = plans.reduce((sum, p) => sum + p.amountWad, 0n);
+  if (totalNeeded > TOTAL_SUPPLY) {
+    throw new Error("Combined vesting allocations cannot exceed the 100,000,000 MOON supply.");
+  }
   const signerBal: bigint = await moon.balanceOf(signer.address);
   console.log(`\nSigner MOON balance: ${fmt(signerBal)} MOON`);
   console.log(`Total to lock:       ${fmt(totalNeeded)} MOON\n`);
@@ -193,6 +262,9 @@ async function main() {
 
     await (await moon.transfer(walletAddr, p.amountWad)).wait();
     const locked: bigint = await moon.balanceOf(walletAddr);
+    if (locked !== p.amountWad) {
+      throw new Error(`Funding verification failed for vesting wallet ${walletAddr}.`);
+    }
     console.log(`   wallet ${walletAddr} · locked ${fmt(locked)} MOON\n`);
 
     results.push({
@@ -215,7 +287,6 @@ async function main() {
   // ── Persist the vesting deployment for the dashboard + audits ─────────
   const dir = path.join(__dirname, "..", "deployments");
   fs.mkdirSync(dir, { recursive: true });
-  const outFile = path.join(dir, `${network.name}.vesting.json`);
   const out = {
     network: network.name,
     moon: moonAddress,
@@ -224,7 +295,10 @@ async function main() {
     wallets: results,
     deployedAt: new Date().toISOString(),
   };
-  fs.writeFileSync(outFile, JSON.stringify(out, null, 2));
+  const written = writeDeploymentRecord(dir, `${network.name}.vesting`, out);
+  if (written.archivedFile) {
+    console.log(`Archived previous vesting record: ${path.relative(dir, written.archivedFile)}`);
+  }
   console.log(`Saved deployments/${network.name}.vesting.json`);
 
   // ── Dashboard env (optional locked/unlocked display) ──────────────────

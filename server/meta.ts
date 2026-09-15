@@ -9,7 +9,10 @@ import {
   TECHNICAL_PAPER_INTRO,
 } from "@shared/page-descriptions";
 
-const BASE_URL = "https://moonball.replit.app";
+const BASE_URL = (process.env.PUBLIC_BASE_URL || "https://moonball.info").replace(
+  /\/+$/,
+  "",
+);
 const DEFAULT_IMAGE = `${BASE_URL}/moon-logo.png`;
 
 const STYLE = `
@@ -145,7 +148,7 @@ const ROUTE_META: Record<string, RouteMeta> = {
             "name": "Does the treasury protect the price?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "No. The treasury funds liquidity, the oracle, and operations. It never buys back or defends a price level.",
+              "text": "No. V1 has no automatic, mandatory, or price-defense buyback and the treasury does not guarantee a price. Any future discretionary treasury action would require separate governance, legal, regulatory, and treasury review.",
             },
           },
         ],
@@ -291,9 +294,9 @@ const ROUTE_META: Record<string, RouteMeta> = {
       </div>
     </div>
     <p style="${P}">
-      The pool launches at a 1% fee tier. A protocol skim of swap fees funds the treasury.
-      50% of the skim is reinvested as protocol-owned liquidity to deepen the pool; 50% covers
-      oracle, audits, infrastructure, and development.
+      The pool launches at a 1% total fee tier with no Moonball surcharge. When the Safe collects
+      fees earned by Moonball-owned POL, 12% goes to the protocol treasury and 88% remains with POL.
+      The current 50% POL / 50% operations treasury allocation is mutable policy, not an automatic rule.
     </p>
 
     <h2 style="${H2}">How MOON Trades</h2>
@@ -314,11 +317,11 @@ const ROUTE_META: Record<string, RouteMeta> = {
     <h2 style="${H2}">What the Treasury Does</h2>
     <p style="${P}">
       The treasury is visible on-chain. Its mandate is growth and operations — never price defense.
-      Revenue comes from a protocol skim on swap fees.
+      Fee revenue comes from the 12% allocation applied when Moonball-owned POL fees are collected.
     </p>
     <div style="${CARD}">
       <div style="color:#F5A623;font-size:.8rem;font-weight:700;margin-bottom:4px;">Seed and Deepen Liquidity</div>
-      <div style="${P}">Protocol-owned liquidity for tighter spreads. Grows automatically with trading volume.</div>
+      <div style="${P}">Safe-owned protocol liquidity for the official market, managed under authorized treasury policy.</div>
     </div>
     <div style="${CARD}">
       <div style="color:#F5A623;font-size:.8rem;font-weight:700;margin-bottom:4px;">Fund the Oracle</div>
@@ -326,7 +329,7 @@ const ROUTE_META: Record<string, RouteMeta> = {
     </div>
     <div style="${CARD}">
       <div style="color:#F5A623;font-size:.8rem;font-weight:700;margin-bottom:4px;">Cover Operations</div>
-      <div style="${P}">Audits, infrastructure, and development. Funded by the protocol skim, not by selling tokens.</div>
+      <div style="${P}">Audits, infrastructure, and development. Funded under treasury policy from Moonball's collected POL fee allocation.</div>
     </div>
     <p style="${P}">Treasury reserves create no claim on the protocol and are not a redemption backstop.</p>
 
@@ -372,7 +375,7 @@ const ROUTE_META: Record<string, RouteMeta> = {
     </div>
     <div style="${CARD}">
       <div style="color:#fff;font-size:.9rem;font-weight:700;margin-bottom:4px;">Does the treasury protect the price?</div>
-      <p style="${P}">No. The treasury funds liquidity, the oracle, and operations. It never buys back or defends a price level.</p>
+      <p style="${P}">No. V1 has no automatic, mandatory, or price-defense buyback and the treasury does not guarantee a price. Any future discretionary treasury action requires separate review and creates no price-support obligation.</p>
     </div>
 
     <h2 style="${H2}">Roadmap</h2>
@@ -580,12 +583,14 @@ const ROUTE_META: Record<string, RouteMeta> = {
         to compensate LPs for this asymmetric risk.
       </p>
       <p style="${P}">
-        Protocol skim: a portion of each swap fee is routed to the treasury at the router layer —
-        separate from and in addition to the LP's share. LPs receive the majority of every swap fee.
-        The skim is not deducted from LP earnings; it is charged on top at the routing layer.
+        The trader pays exactly the 1% pool fee with no Moonball surcharge. When the 2-of-3 Safe
+        collects fees earned by Moonball-owned POL positions, 12% goes to the protocol treasury
+        and 88% remains with POL. Fees earned by third-party LP positions are unaffected.
       </p>
       <p style="${P}">
-        Protocol-owned liquidity deepens the pool to tighten spreads but is never withdrawn to defend a price.
+        The Safe owns production POL position NFTs. POL may be migrated or withdrawn for legitimate
+        governance, security, recovery, or infrastructure needs, but never to guarantee redemption
+        or defend a price.
       </p>
     </section>
 
@@ -593,16 +598,16 @@ const ROUTE_META: Record<string, RouteMeta> = {
       <h2 style="${H2}">6. Treasury Policy</h2>
       <p style="${P}">
         The treasury is fully visible on-chain. Its mandate is growth and operations — never price defense.
-        Revenue comes from the protocol skim on swap fees.
+        Fee revenue is the 12% allocation from collected Moonball POL fees.
       </p>
       <p style="${P}">
-        The treasury split is: 50% protocol-owned liquidity reinvestment (deepens the pool, never withdrawn
-        to defend price) and 50% operations (oracle, audits, infrastructure, and development).
+        The current treasury policy targets 50% for protocol-owned liquidity and 50% for operations.
+        This allocation is mutable Safe-governed policy, not automatic or immutable on-chain behavior.
       </p>
       <ul style="color:#94A3B8;font-size:.9rem;padding-left:20px;margin:0 0 12px;">
-        <li><strong style="color:#fff;">Seed and deepen liquidity</strong> — protocol-owned liquidity for tighter spreads, funded by the 50% POL split, grows automatically with trading volume.</li>
-        <li><strong style="color:#fff;">Fund the oracle</strong> — pays for multi-source jackpot verification published on-chain, funded by the 50% operations split.</li>
-        <li><strong style="color:#fff;">Cover operations</strong> — audits, infrastructure, and development, funded by the protocol skim, not by selling tokens.</li>
+        <li><strong style="color:#fff;">Manage official liquidity</strong> — Safe-owned protocol liquidity managed under authorized treasury policy.</li>
+        <li><strong style="color:#fff;">Fund the oracle</strong> — pays for multi-source jackpot verification under the current operations policy.</li>
+        <li><strong style="color:#fff;">Cover operations</strong> — audits, infrastructure, and development, funded under treasury policy from Moonball's collected POL fee allocation.</li>
       </ul>
       <p style="${P}">Treasury reserves create no claim on the protocol and are not a redemption backstop.</p>
     </section>
@@ -611,9 +616,9 @@ const ROUTE_META: Record<string, RouteMeta> = {
       <h2 style="${H2}">7. Reset Mechanics &amp; Whale Exit</h2>
       <p style="${P}">
         A reset is detected when the oracle reports a jackpot that drops sharply (below 50% of the last
-        known value), indicating a winner. The reference value falls back to its base and a new cycle begins.
-        The market reprices on its own — there is no cooldown gating trades, because there is nothing for
-        the protocol to pause.
+        known value), indicating a winner. The reference value falls back to its base and a new reference
+        cycle begins. The perpetual token, official pool, supply, and liquidity continue uninterrupted;
+        the market reprices on its own.
       </p>
       <p style="${P}">
         <strong style="color:#fff;">Whale exit:</strong> because exits are AMM swaps, a large holder selling moves the price down the curve
@@ -629,7 +634,7 @@ const ROUTE_META: Record<string, RouteMeta> = {
         <li><strong style="color:#fff;">Oracle manipulation</strong> — mitigated by multi-source consensus and sanity bounds; a single bad source cannot publish.</li>
         <li><strong style="color:#fff;">Reference vs. market confusion</strong> — the UI never presents the oracle as a tradable price.</li>
         <li><strong style="color:#fff;">AMM / liquidity risk</strong> — thin pools allow price impact; protocol-owned liquidity reduces but cannot eliminate it.</li>
-        <li><strong style="color:#fff;">Standard smart-contract risk</strong> — professional audit and timelocked, multi-sig admin required before mainnet.</li>
+        <li><strong style="color:#fff;">Standard smart-contract risk</strong> — professional audit and Moonball 2-of-3 Safe administration required before mainnet; an MVP timelock is optional.</li>
       </ul>
     </section>
 
@@ -672,15 +677,14 @@ const ROUTE_META: Record<string, RouteMeta> = {
       <p style="${P}">On-chain vesting: team and advisor allocations are locked in a MoonVestingWallet contract enforcing a cliff and linear unlock schedule. Anyone can verify the locked balance on-chain via the Base block explorer.</p>
       <p style="${P}" style="font-weight:700;color:#94A3B8;font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;">Fee Flow</p>
       <p style="${P}">
-        Swap fee → LP share (majority) + protocol skim (minority) → treasury → 50% POL
-        reinvestment / 50% operations. The LP share compensates liquidity providers for impermanent
-        loss exposure. The protocol skim funds the oracle, audits, infrastructure, and POL growth.
+        Trader pays 1% pool fee. For fees earned and collected by Moonball-owned POL, 88% remains
+        with POL and 12% goes to the treasury. The treasury currently targets 50% POL / 50%
+        operations as mutable policy. Third-party LP fee earnings are unaffected.
       </p>
       <p style="${P}" style="font-weight:700;color:#94A3B8;font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;">Fee Glide Path</p>
       <p style="${P}">
-        The pool launches at a 1% fee tier to compensate LPs for elevated reset-event impermanent
-        loss. As pool depth grows, governance can step the fee tier down: deeper pool → lower fee →
-        more volume → more protocol-owned liquidity. Each tier step is triggered by TVL milestones.
+        The pool launches at a 1% fee tier. A future change, potentially to 0.30%, requires a
+        separate governance-approved migration or configuration. No TVL milestone changes the fee automatically.
       </p>
     </section>
 
@@ -689,14 +693,14 @@ const ROUTE_META: Record<string, RouteMeta> = {
       <p style="${P}">
         The pool size calculator helps estimate how much liquidity should be seeded in the
         MOON/USDC pool at launch. Given an expected daily trading volume and a target maximum
-        price impact per trade, it calculates the required USDC seed, the corresponding MOON
-        seed at the oracle's risk-adjusted launch price, and the total pool TVL needed to keep
-        price impact within bounds.
+        price impact per trade, it calculates the required USDC seed, a corresponding MOON
+        seed under the displayed oracle-reference scenario, and the total pool TVL needed to
+        keep price impact within bounds.
       </p>
       <p style="${P}">
-        The launch price anchor is the oracle's risk-adjusted value for the current jackpot,
-        which sets the initial MOON/USDC seed ratio. All calculations are shown live on the
-        Technical Paper page using the current oracle reference.
+        This is a nonbinding scenario, not a launch-price instruction. The Safe separately
+        approves the actual initial pool price and seed ratio. The oracle does not initialize,
+        reset, or otherwise control the AMM.
       </p>
     </section>
 

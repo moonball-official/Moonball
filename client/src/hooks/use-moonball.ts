@@ -15,19 +15,29 @@ export interface LivePowerballData {
   estimated: number;
   cashValue: number;
   nextDraw: string;
+  nextDrawISO: string;
   nextDrawTime: string;
   lastDraw: string;
+  lastDrawISO: string;
+  cycleId: string;
+  drawId: string;
   winningNumbers: number[];
   powerball: number;
   multiplier: number;
   drawsInCurrentCycle: number;
-  nextDrawISO: string;
   lastUpdated: string;
   winner: string;
   cycleStart: string;
   moonPriceAtReset: number;
   verificationStatus: "verified" | "unconfirmed";
   verificationSources: string[];
+  sourceObservations: {
+    source: string;
+    value: number;
+    cashValue: number;
+    fetchedAt: string;
+  }[];
+  sourceObservedAt: string;
   verifiedAt: string;
   oracle: OracleModel;
 }

@@ -9,8 +9,9 @@ pragma solidity ^0.8.24;
  *         defend any peg, and holds no redemption obligation to holders.
  *
  * @dev DESIGN (V2 — DEX event market):
- *      - The entire supply is minted ONCE, at deployment, to a single recipient
- *        (the deployer or a treasury/LP address) so it can seed DEX liquidity.
+ *      - Exactly 100,000,000 MOON is minted ONCE, at deployment, to a single
+ *        recipient (the treasury/Safe) so it can fund the approved allocation
+ *        and seed protocol-owned DEX liquidity.
  *      - There is no public mint and no redeem. There is no collateral treasury
  *        and no peg-reinforcement logic. Supply is fixed forever after the
  *        constructor runs.
@@ -28,7 +29,8 @@ contract MoonballToken {
     uint8 public constant decimals = 18;
 
     // ─── ERC-20 STATE ─────────────────────────────────────────────────
-    uint256 public totalSupply;
+    uint256 public constant TOTAL_SUPPLY = 100_000_000 * 10 ** 18;
+    uint256 public constant totalSupply = TOTAL_SUPPLY;
     mapping(address => uint256) public balanceOf;
     mapping(address => mapping(address => uint256)) public allowance;
 
@@ -40,21 +42,14 @@ contract MoonballToken {
     error InsufficientBalance(uint256 requested, uint256 available);
     error InsufficientAllowance(uint256 requested, uint256 available);
     error ZeroAddress();
-    error ZeroAmount();
-
     /**
-     * @param initialSupply Whole MOON tokens to mint at genesis (18 decimals are
-     *        applied here, so pass 1_000_000 for one million MOON).
      * @param recipient Address that receives the entire initial supply, e.g. the
-     *        account that will seed the DEX pool.
+     *        Moonball treasury/Safe that will manage allocations and POL.
      */
-    constructor(uint256 initialSupply, address recipient) {
+    constructor(address recipient) {
         if (recipient == address(0)) revert ZeroAddress();
-        if (initialSupply == 0) revert ZeroAmount();
-        uint256 supply = initialSupply * (10 ** uint256(decimals));
-        totalSupply = supply;
-        balanceOf[recipient] = supply;
-        emit Transfer(address(0), recipient, supply);
+        balanceOf[recipient] = TOTAL_SUPPLY;
+        emit Transfer(address(0), recipient, TOTAL_SUPPLY);
     }
 
     // ─── ERC-20 STANDARD FUNCTIONS ────────────────────────────────────

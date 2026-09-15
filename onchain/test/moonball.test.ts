@@ -6,16 +6,21 @@ const WAD = 10n ** 18n; // 1 MOON / WAD dollar (18 decimals)
 const moon = (n: string) => ethers.parseEther(n);
 
 const STALENESS = 4 * 60 * 60; // 4 hours
-const SUPPLY = 1_000_000n; // whole MOON minted at genesis
+const SUPPLY = 100_000_000n; // founder-approved whole MOON supply
+const DAY = 24 * 60 * 60;
 
 async function deployFixture() {
   const [deployer, recipient, user, other] = await ethers.getSigners();
 
   const Oracle = await ethers.getContractFactory("JackpotOracle");
-  const oracle = await Oracle.deploy(deployer.address, STALENESS);
+  const oracle: any = await Oracle.deploy(
+    deployer.address,
+    deployer.address,
+    STALENESS
+  );
 
   const Moon = await ethers.getContractFactory("MoonballToken");
-  const moonToken = await Moon.deploy(SUPPLY, recipient.address);
+  const moonToken: any = await Moon.deploy(recipient.address);
 
   return { deployer, recipient, user, other, oracle, moonToken };
 }
@@ -24,22 +29,64 @@ async function pushJackpot(
   oracle: any,
   jackpotMillions: number,
   hadWinner = false,
-  draws = 1
+  draws = 1,
+  overrides: Record<string, unknown> = {}
 ) {
   const now = await time.latest();
-  await oracle.fulfillJackpotData(
-    BigInt(jackpotMillions) * 1_000_000n,
-    (BigInt(jackpotMillions) * 1_000_000n) / 2n,
-    now,
-    now + 3 * 24 * 60 * 60,
+  const latest = await oracle.getLatestJackpot();
+  const sequence = latest.sequence + 1n;
+  const fields = {
+    sequence,
+    cycleId: ethers.id(hadWinner ? `cycle-${sequence}` : "cycle-1"),
+    drawId: ethers.solidityPackedKeccak256(
+      ["string", "uint64"],
+      ["draw", now - 60]
+    ),
+    jackpotAmountUsd: BigInt(jackpotMillions) * 1_000_000n,
+    cashValueUsd: (BigInt(jackpotMillions) * 1_000_000n) / 2n,
+    lastDrawTimestamp: now - 60,
+    nextDrawTimestamp: now + 3 * DAY,
+    sourceTimestamp: now,
     hadWinner,
-    draws
-  );
+    drawsSinceReset: draws,
+    ...overrides,
+  };
+  const snapshotId =
+    typeof overrides.snapshotId === "string"
+      ? overrides.snapshotId
+      : ethers.solidityPackedKeccak256(
+          [
+            "bytes32",
+            "bytes32",
+            "uint256",
+            "uint256",
+            "uint64",
+            "uint64",
+            "uint64",
+            "bool",
+            "uint32",
+          ],
+          [
+            fields.cycleId,
+            fields.drawId,
+            fields.jackpotAmountUsd,
+            fields.cashValueUsd,
+            fields.lastDrawTimestamp,
+            fields.nextDrawTimestamp,
+            fields.sourceTimestamp,
+            fields.hadWinner,
+            fields.drawsSinceReset,
+          ]
+        );
+  const update = { ...fields, snapshotId };
+  await oracle.fulfillJackpotData(update);
+  return update;
 }
 
 describe("JackpotOracle", () => {
   it("starts not fresh and reports millions after a push", async () => {
     const { oracle } = await loadFixture(deployFixture);
+    expect(await oracle.ORACLE_SCHEMA_VERSION()).to.equal(2n);
     expect(await oracle.isFresh()).to.equal(false);
     await pushJackpot(oracle, 169);
     expect(await oracle.isFresh()).to.equal(true);
@@ -48,35 +95,110 @@ describe("JackpotOracle", () => {
 
   it("only the authorized updater can push", async () => {
     const { oracle, user } = await loadFixture(deployFixture);
+    const now = await time.latest();
     await expect(
-      oracle.connect(user).fulfillJackpotData(
-        169_000_000n,
-        84_000_000n,
-        await time.latest(),
-        (await time.latest()) + 1000,
-        false,
-        1
-      )
+      oracle.connect(user).fulfillJackpotData({
+        sequence: 1,
+        snapshotId: ethers.id("unauthorized-snapshot"),
+        cycleId: ethers.id("cycle-1"),
+        drawId: ethers.id("draw-1"),
+        jackpotAmountUsd: 169_000_000n,
+        cashValueUsd: 84_000_000n,
+        lastDrawTimestamp: now - 60,
+        nextDrawTimestamp: now + DAY,
+        sourceTimestamp: now,
+        hadWinner: false,
+        drawsSinceReset: 1,
+      })
     ).to.be.revertedWithCustomError(oracle, "Unauthorized");
   });
 
-  it("rejects jackpots outside sanity bounds", async () => {
+  it("rejects jackpots and cash values outside sanity bounds", async () => {
+    const { oracle } = await loadFixture(deployFixture);
+    await expect(
+      pushJackpot(oracle, 1)
+    ).to.be.revertedWithCustomError(oracle, "JackpotOutOfBounds");
+    await expect(
+      pushJackpot(oracle, 6_000)
+    ).to.be.revertedWithCustomError(oracle, "JackpotOutOfBounds");
+    await expect(
+      pushJackpot(oracle, 100, false, 1, { cashValueUsd: 0 })
+    ).to.be.revertedWithCustomError(oracle, "CashValueOutOfBounds");
+    await expect(
+      pushJackpot(oracle, 100, false, 1, { cashValueUsd: 101_000_000n })
+    ).to.be.revertedWithCustomError(oracle, "CashValueOutOfBounds");
+  });
+
+  it("measures freshness from the source observation, not publication time", async () => {
+    const { oracle } = await loadFixture(deployFixture);
+    const now = await time.latest();
+    await pushJackpot(oracle, 200, false, 1, {
+      lastDrawTimestamp: now - STALENESS + 30,
+      sourceTimestamp: now - STALENESS + 60,
+    });
+    expect(await oracle.isFresh()).to.equal(true);
+    await time.increase(61);
+    expect(await oracle.isFresh()).to.equal(false);
+  });
+
+  it("rejects stale source observations and invalid draw chronology", async () => {
     const { oracle } = await loadFixture(deployFixture);
     const now = await time.latest();
     await expect(
-      oracle.fulfillJackpotData(1_000_000n, 0, now, now + 1000, false, 1)
-    ).to.be.revertedWithCustomError(oracle, "JackpotOutOfBounds");
+      pushJackpot(oracle, 200, false, 1, {
+        lastDrawTimestamp: now - STALENESS - 2,
+        sourceTimestamp: now - STALENESS - 1,
+      })
+    ).to.be.revertedWithCustomError(oracle, "InvalidSourceTimestamp");
     await expect(
-      oracle.fulfillJackpotData(6_000_000_000n, 0, now, now + 1000, false, 1)
-    ).to.be.revertedWithCustomError(oracle, "JackpotOutOfBounds");
+      pushJackpot(oracle, 200, false, 1, {
+        lastDrawTimestamp: now + 1,
+        sourceTimestamp: now,
+      })
+    ).to.be.revertedWithCustomError(oracle, "InvalidDrawChronology");
   });
 
-  it("becomes stale after the staleness threshold", async () => {
+  it("requires monotonic sequences and permanently rejects replayed snapshots", async () => {
+    const { oracle } = await loadFixture(deployFixture);
+    const first = await pushJackpot(oracle, 200);
+    await expect(
+      pushJackpot(oracle, 210, false, 2, { sequence: 1 })
+    ).to.be.revertedWithCustomError(oracle, "InvalidSequence");
+    await expect(
+      pushJackpot(oracle, 210, false, 2, { snapshotId: first.snapshotId })
+    ).to.be.revertedWithCustomError(oracle, "SnapshotAlreadyUsed");
+    expect(await oracle.usedSnapshotIds(first.snapshotId)).to.equal(true);
+  });
+
+  it("binds snapshot IDs to their contents and rejects observation regressions", async () => {
+    const { oracle } = await loadFixture(deployFixture);
+    const first = await pushJackpot(oracle, 200);
+    await expect(
+      pushJackpot(oracle, 210, false, 2, { snapshotId: ethers.id("made-up") })
+    ).to.be.revertedWithCustomError(oracle, "InvalidSnapshotId");
+    await expect(
+      pushJackpot(oracle, 210, false, 2, {
+        sourceTimestamp: Number(first.sourceTimestamp) - 1,
+      })
+    ).to.be.revertedWithCustomError(oracle, "SourceTimestampRegression");
+    await expect(
+      pushJackpot(oracle, 210, false, 2, {
+        lastDrawTimestamp: Number(first.lastDrawTimestamp) - 1,
+      })
+    ).to.be.revertedWithCustomError(oracle, "DrawTimestampRegression");
+  });
+
+  it("records cycle changes without coupling them to token or pool state", async () => {
     const { oracle } = await loadFixture(deployFixture);
     await pushJackpot(oracle, 200);
-    expect(await oracle.isFresh()).to.equal(true);
-    await time.increase(STALENESS + 1);
-    expect(await oracle.isFresh()).to.equal(false);
+    await pushJackpot(oracle, 20, true, 0);
+    const cycleChanges = await oracle.queryFilter(
+      oracle.filters.ReferenceCycleChanged()
+    );
+    expect(cycleChanges).to.have.length(1);
+    const latest = await oracle.getLatestJackpot();
+    expect(latest.hadWinner).to.equal(true);
+    expect(latest.drawsSinceReset).to.equal(0n);
   });
 
   it("publishes a reference value of (jackpotMillions / 2) dollars in WAD", async () => {
@@ -107,6 +229,54 @@ describe("JackpotOracle", () => {
     ).to.be.revertedWithCustomError(oracle, "Unauthorized");
     await oracle.setAuthorizedUpdater(other.address);
     expect(await oracle.authorizedUpdater()).to.equal(other.address);
+    await expect(
+      oracle.setAuthorizedUpdater(ethers.ZeroAddress)
+    ).to.be.revertedWithCustomError(oracle, "ZeroAddress");
+  });
+
+  it("lets the owner pause updates and bounds the freshness policy", async () => {
+    const { oracle, user } = await loadFixture(deployFixture);
+    await oracle.setUpdatesPaused(true);
+    await expect(pushJackpot(oracle, 200)).to.be.revertedWithCustomError(
+      oracle,
+      "OracleUpdatesPaused"
+    );
+    await expect(
+      oracle.connect(user).setUpdatesPaused(false)
+    ).to.be.revertedWithCustomError(oracle, "Unauthorized");
+    await expect(
+      oracle.setStalenessThreshold(60)
+    ).to.be.revertedWithCustomError(oracle, "InvalidStalenessThreshold");
+    await expect(
+      oracle.setStalenessThreshold(2 * DAY)
+    ).to.be.revertedWithCustomError(oracle, "InvalidStalenessThreshold");
+  });
+
+  it("uses two-step ownership transfer", async () => {
+    const { oracle, user, other } = await loadFixture(deployFixture);
+    await oracle.transferOwnership(other.address);
+    expect(await oracle.owner()).to.not.equal(other.address);
+    expect(await oracle.pendingOwner()).to.equal(other.address);
+    await expect(
+      oracle.connect(user).acceptOwnership()
+    ).to.be.revertedWithCustomError(oracle, "Unauthorized");
+    await oracle.connect(other).acceptOwnership();
+    expect(await oracle.owner()).to.equal(other.address);
+    expect(await oracle.pendingOwner()).to.equal(ethers.ZeroAddress);
+  });
+
+  it("rejects unsafe constructor configuration", async () => {
+    const { deployer } = await loadFixture(deployFixture);
+    const Oracle = await ethers.getContractFactory("JackpotOracle");
+    await expect(
+      Oracle.deploy(ethers.ZeroAddress, deployer.address, STALENESS)
+    ).to.be.revertedWithCustomError(Oracle, "ZeroAddress");
+    await expect(
+      Oracle.deploy(deployer.address, ethers.ZeroAddress, STALENESS)
+    ).to.be.revertedWithCustomError(Oracle, "ZeroAddress");
+    await expect(
+      Oracle.deploy(deployer.address, deployer.address, 0)
+    ).to.be.revertedWithCustomError(Oracle, "InvalidStalenessThreshold");
   });
 });
 
@@ -117,6 +287,7 @@ describe("MoonballToken (fixed-supply ERC-20)", () => {
     expect(await moonToken.name()).to.equal("Moonball");
     expect(await moonToken.symbol()).to.equal("MOON");
     expect(await moonToken.decimals()).to.equal(18);
+    expect(await moonToken.TOTAL_SUPPLY()).to.equal(expected);
     expect(await moonToken.totalSupply()).to.equal(expected);
     expect(await moonToken.balanceOf(recipient.address)).to.equal(expected);
   });
@@ -129,16 +300,13 @@ describe("MoonballToken (fixed-supply ERC-20)", () => {
     expect((moonToken as any).treasuryBalance).to.equal(undefined);
   });
 
-  it("reverts deployment with a zero recipient or zero supply", async () => {
+  it("hardcodes the supply and accepts only a recipient constructor argument", async () => {
     const Moon = await ethers.getContractFactory("MoonballToken");
-    await expect(Moon.deploy(SUPPLY, ethers.ZeroAddress)).to.be.revertedWithCustomError(
+    expect(Moon.interface.deploy.inputs).to.have.length(1);
+    expect(Moon.interface.deploy.inputs[0].type).to.equal("address");
+    await expect(Moon.deploy(ethers.ZeroAddress)).to.be.revertedWithCustomError(
       Moon,
       "ZeroAddress"
-    );
-    const [, recipient] = await ethers.getSigners();
-    await expect(Moon.deploy(0, recipient.address)).to.be.revertedWithCustomError(
-      Moon,
-      "ZeroAmount"
     );
   });
 
@@ -209,7 +377,7 @@ describe("MoonVestingWallet", () => {
     const amount = moon("20000");
 
     const Vesting = await ethers.getContractFactory("MoonVestingWallet");
-    const vesting = await Vesting.deploy(founder.address, start, duration, cliff);
+    const vesting: any = await Vesting.deploy(founder.address, start, duration, cliff);
     await vesting.waitForDeployment();
 
     // Treasury (recipient) funds the wallet.
@@ -271,7 +439,7 @@ describe("MoonVestingWallet", () => {
     const amount = moon("15000");
 
     const Vesting = await ethers.getContractFactory("MoonVestingWallet");
-    const vesting = await Vesting.deploy(investor.address, start, duration, 0);
+    const vesting: any = await Vesting.deploy(investor.address, start, duration, 0);
     await moonToken.connect(recipient).transfer(await vesting.getAddress(), amount);
 
     await time.increaseTo(start + duration / 2);

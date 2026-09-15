@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
 import { insertWaitlistEntrySchema } from "@shared/schema";
-import { fetchLivePowerballData, getNextDrawDateISO } from "./powerball";
+import { fetchLivePowerballData } from "./powerball";
 import { syncCycleState, seedHistoricalCycles } from "./cycle-sync";
 import { buildOracleModel } from "./oracle-model";
 
@@ -34,6 +34,10 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+  app.get("/api/health", (_req, res) => {
+    res.json({ status: "ok", service: "moonball" });
+  });
+
   app.get(api.cycles.list.path, async (req, res) => {
     const cycles = await storage.getCycles();
     res.json(cycles);
@@ -62,6 +66,12 @@ export async function registerRoutes(
       const jackpotRow = await storage.getJackpotData();
       const cycleStart = jackpotRow?.cycleStart || (req.query.cycleStart as string) || "Feb 3, 2026";
       const liveData = await fetchLivePowerballData(cycleStart, jackpotRow?.estimated);
+      const parsedCycleStart = new Date(cycleStart);
+      if (Number.isNaN(parsedCycleStart.getTime())) {
+        throw new Error(`Invalid cycle start date: ${cycleStart}`);
+      }
+      const cycleId = `powerball-cycle:${parsedCycleStart.toISOString().slice(0, 10)}`;
+      const drawId = `powerball-draw:${liveData.lastDrawISO}`;
 
       const oracle = buildOracleModel(
         liveData.estimated,
@@ -71,13 +81,16 @@ export async function registerRoutes(
 
       res.json({
         ...liveData,
-        nextDrawISO: getNextDrawDateISO(),
+        cycleId,
+        drawId,
         winner: jackpotRow?.winner || "No",
         cycleStart: jackpotRow?.cycleStart || cycleStart,
         moonPriceAtReset: jackpotRow?.moonPriceAtReset || 20,
         drawsInCurrentCycle: jackpotRow?.drawsWithoutWinner ?? liveData.drawsInCurrentCycle,
         verificationStatus: liveData.verificationStatus,
         verificationSources: liveData.verificationSources,
+        sourceObservations: liveData.sourceObservations,
+        sourceObservedAt: liveData.sourceObservedAt,
         verifiedAt: liveData.verifiedAt,
         oracle,
       });

@@ -1,10 +1,23 @@
 {
+  "status": "candidate",
+  "architecture": "moonball-v1",
   "network": "baseSepolia",
   "usdc": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
-  "oracle": "0xf3A4796733DB128FDf8954Ae202a35DC37EFa347",
-  "moon": "0x2F654334f6f925b835E7Aab5C5C5c04b98B6bFe7",
+  "oracle": "0x67B5b3147072bd13D4bA41eCF7f7b3531CED7EEE",
+  "moon": "0x70171D11Dfe7791431F06c8E1e7837517394D58D",
+  "owner": "0xa51690f5C451f428CcBDa048b4c720EA4962Ee5E",
   "updater": "0xa51690f5C451f428CcBDa048b4c720EA4962Ee5E",
-  "treasury": "0xB2cb3851d8055bA6aA8Cf7E548c1211D475e0d29",
   "staleness": 14400,
-  "deployedAt": "2026-06-08T01:24:24.883Z"
+  "supply": "100000000",
+  "supplyUnits": "100000000000000000000000000",
+  "recipient": "0xa51690f5C451f428CcBDa048b4c720EA4962Ee5E",
+  "safe": null,
+  "deployedAt": "2026-09-11T01:26:27.793Z",
+  "recovery": {
+    "oracleTransactionHash": "0x8573445ef4ba14c061c116f0fe92f57d07b34c8ac14eff11d46b7e04771e6e45",
+    "oracleDeploymentNonce": 12,
+    "moonTransactionHash": "0xb1168d26a58fecbf06110756b9ed1434377debc489f618347b644be68ca81cca",
+    "moonDeploymentNonce": 13,
+    "recoveredAt": "2026-09-11T01:26:27.793Z"
+  }
 }

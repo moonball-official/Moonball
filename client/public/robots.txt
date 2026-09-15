@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://moonball.replit.app/sitemap.xml
+Sitemap: https://moonball.info/sitemap.xml

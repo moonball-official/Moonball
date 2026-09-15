@@ -1,0 +1,325 @@
+{
+  "id": "a88e6fd7-f9a5-4504-8285-acdb63d2007c",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.analytics_events": {
+      "name": "analytics_events",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "event_name": {
+          "name": "event_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "event_data": {
+          "name": "event_data",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "visitor_id": {
+          "name": "visitor_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "path": {
+          "name": "path",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.cycles": {
+      "name": "cycles",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "label": {
+          "name": "label",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "winner": {
+          "name": "winner",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "peak": {
+          "name": "peak",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "color": {
+          "name": "color",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "is_active": {
+          "name": "is_active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
+        },
+        "draws": {
+          "name": "draws",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.jackpot_data": {
+      "name": "jackpot_data",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "estimated": {
+          "name": "estimated",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "cash_value": {
+          "name": "cash_value",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "next_draw": {
+          "name": "next_draw",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "next_draw_time": {
+          "name": "next_draw_time",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "last_draw": {
+          "name": "last_draw",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "winning_numbers": {
+          "name": "winning_numbers",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "powerball": {
+          "name": "powerball",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "winner": {
+          "name": "winner",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "cycle_start": {
+          "name": "cycle_start",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "draws_without_winner": {
+          "name": "draws_without_winner",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "jackpot_growth": {
+          "name": "jackpot_growth",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "moon_price_at_reset": {
+          "name": "moon_price_at_reset",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "verification_status": {
+          "name": "verification_status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'unconfirmed'"
+        },
+        "verified_at": {
+          "name": "verified_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "verification_sources": {
+          "name": "verification_sources",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.page_views": {
+      "name": "page_views",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "path": {
+          "name": "path",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "visitor_id": {
+          "name": "visitor_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "referrer": {
+          "name": "referrer",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "user_agent": {
+          "name": "user_agent",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.waitlist_entries": {
+      "name": "waitlist_entries",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "waitlist_entries_email_unique": {
+          "name": "waitlist_entries_email_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "email"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

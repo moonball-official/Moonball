@@ -178,8 +178,9 @@ export const MOON_V2 = {
   poolPair: "MOON / USDC",
   // DEX swap link. Empty until the pool is live; the UI shows a pre-launch state.
   dexUrl: "",
-  // What the treasury actually does in V2: it funds protocol operations and
-  // seeds liquidity. It never buys back or props up the MOON price.
+  // V1 has no automatic, mandatory, or price-defense buyback. The treasury
+  // funds protocol operations and manages POL; any future discretionary action
+  // requires separate governance and review and creates no price guarantee.
   treasuryJobs: [
     {
       title: "Seed & deepen liquidity",
@@ -191,13 +192,14 @@ export const MOON_V2 = {
     },
     {
       title: "Cover operations",
-      desc: "Audits, infrastructure, and development. Funded by LP fees and a small protocol fee, not by selling promises.",
+      desc: "Audits, infrastructure, and development. Funded under treasury policy from Moonball's share of collected POL fees, not by selling promises.",
     },
   ],
 };
 
 // ─── Tokenomics & fee structure ──────────────────────────────────────────
-// These are the locked, investor-facing parameters for the MOON launch.
+// Founder-approved launch parameters and current display policy. Treasury policy
+// values are mutable governance policy, not immutable protocol parameters.
 export const TOKENOMICS = {
   // 100 million MOON minted at genesis to the treasury wallet.
   // Not all released at once — see allocation buckets below.
@@ -205,30 +207,30 @@ export const TOKENOMICS = {
 
   // ── Pool fee (Uniswap v3 tier in bps, and percent) ──────────────────
   // Start at 1% to compensate LPs for elevated IL around jackpot resets.
-  // Step down as TVL grows per the glide path below.
+  // Any future lower tier requires a separate governance-approved change.
   poolFeeTier: 10_000,   // 1.00% — Uniswap v3 10000-bps tier
   poolFeePct: 1.0,
 
-  // ── Protocol skim ───────────────────────────────────────────────────
-  // Charged at the router layer on every swap. Does NOT affect LP fees.
-  // 12% of swap fees → treasury. LPs keep the remaining 88%.
-  protocolSkimBps: 1_200,
-  protocolSkimPct: 12,
-  lpSharePct: 88,
+  // ── Moonball POL fee allocation ─────────────────────────────────────
+  // Applied only when fees earned by Moonball-owned POL positions are
+  // collected. It is not a router surcharge or Uniswap native protocol fee.
+  // 12% of collected POL fees → treasury; 88% remains with POL.
+  protocolPolFeeShareBps: 1_200,
+  protocolPolFeeSharePct: 12,
+  polRetainedFeePct: 88,
 
-  // ── Treasury split ──────────────────────────────────────────────────
-  // 50% of treasury revenue → protocol-owned liquidity reinvestment.
-  // 50% → operations (oracle, infra, audits). Published on-chain.
-  // This is the Liquidity Growth Policy: a defined, automatic reinvestment rule.
+  // ── Current treasury policy ─────────────────────────────────────────
+  // Current target: 50% POL / 50% operations. This is mutable Safe-governed
+  // treasury policy, not an automatic or immutable on-chain allocation.
   treasuryPolSplit: 50,
   treasuryOpsSplit: 50,
 
-  // ── TVL glide path ──────────────────────────────────────────────────
-  // As pool depth grows, the fee tier steps down. Deeper pool → lower
-  // fee → more volume → more skim → more POL — a compounding flywheel.
+  // ── Fee-tier policy ─────────────────────────────────────────────────
+  // Launch is 1%. A future 0.30% tier is only an option requiring a separate
+  // governance-approved migration/configuration, not an automatic TVL trigger.
   tvlGlidePath: [
-    { tvlUsd: 0,         feeTier: 10_000, feePct: 1.00, label: "Launch" },
-    { tvlUsd: 500_000,   feeTier:  3_000, feePct: 0.30, label: "$500K TVL" },
+    { tvlUsd: 0,  feeTier: 10_000, feePct: 1.00, label: "Launch" },
+    { tvlUsd: -1, feeTier:  3_000, feePct: 0.30, label: "Future governance option" },
   ],
 
   // ── Token allocation buckets ─────────────────────────────────────────
@@ -259,7 +261,7 @@ export const TOKENOMICS = {
       pct: 35,
       color: "#3B82F6",
       description:
-        "Funds the initial MOON/USDC pool seed (protocol-owned liquidity), future POL top-ups, buybacks, and operations. Released by governance in phases — never dumped. Grows the pool flywheel over time.",
+        "Funds the initial MOON/USDC pool seed (protocol-owned liquidity), future POL management, and operations. V1 has no automatic, mandatory, or price-defense buyback. Released by governance in phases — never dumped.",
       lockup: "Phased release",
     },
     {

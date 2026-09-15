@@ -10,7 +10,16 @@ export interface VerificationResult {
   verifiedCashValue: number;
   verificationStatus: "verified" | "unconfirmed";
   verificationSources: string[];
+  sourceObservations: SourceResult[];
+  sourceObservedAt: Date;
   verifiedAt: Date;
+}
+
+export interface ConsensusResult {
+  consensusValue: number;
+  consensusCashValue: number;
+  agreedSources: string[];
+  agreedObservations: SourceResult[];
 }
 
 const CONSENSUS_TOLERANCE = 5;
@@ -20,6 +29,7 @@ const DRAW_MINUTE_ET = 59;
 const POST_DRAW_WINDOW_MS = 90 * 60 * 1000;
 const AGGRESSIVE_INTERVAL_MS = 60 * 1000;
 const NORMAL_CACHE_MS = 5 * 60 * 1000;
+const MAX_SOURCE_CLOCK_SKEW_MS = 5 * 60 * 1000;
 
 let lastVerifiedResult: VerificationResult | null = null;
 let cacheTimestamp = 0;
@@ -251,34 +261,76 @@ async function fetchFromCalottery(): Promise<SourceResult | null> {
   }
 }
 
-function runConsensus(results: SourceResult[]): {
-  consensusValue: number;
-  consensusCashValue: number;
-  agreedSources: string[];
-} | null {
-  if (results.length < 2) return null;
+/**
+ * Select the single largest group of unique sources whose full value range is
+ * within the tolerance. Equal-sized competing groups are rejected instead of
+ * allowing input order to choose which value becomes "verified".
+ */
+export function runConsensus(
+  results: SourceResult[],
+  nowMs = Date.now()
+): ConsensusResult | null {
+  const bySource = new Map<string, SourceResult>();
+  for (const result of results) {
+    const fetchedAt = Date.parse(result.fetchedAt);
+    if (
+      !result.source ||
+      !Number.isFinite(result.value) ||
+      result.value < 20 ||
+      result.value > 5_000 ||
+      !Number.isFinite(fetchedAt) ||
+      fetchedAt > nowMs + MAX_SOURCE_CLOCK_SKEW_MS ||
+      nowMs - fetchedAt > NORMAL_CACHE_MS
+    ) continue;
 
-  for (let i = 0; i < results.length; i++) {
-    const group = [results[i]];
-    for (let j = 0; j < results.length; j++) {
-      if (i === j) continue;
-      if (Math.abs(results[i].value - results[j].value) <= CONSENSUS_TOLERANCE) {
-        group.push(results[j]);
-      }
-    }
-    if (group.length >= 2) {
-      const consensusValue = Math.round(
-        group.reduce((sum, r) => sum + r.value, 0) / group.length
-      );
-      const cashValues = group.filter((r) => r.cashValue > 0);
-      const consensusCashValue =
-        cashValues.length > 0
-          ? Math.round(cashValues.reduce((sum, r) => sum + r.cashValue, 0) / cashValues.length)
-          : 0;
-      return { consensusValue, consensusCashValue, agreedSources: group.map((r) => r.source) };
+    const current = bySource.get(result.source);
+    if (!current || Date.parse(current.fetchedAt) < fetchedAt) {
+      bySource.set(result.source, result);
     }
   }
-  return null;
+
+  const unique = Array.from(bySource.values()).sort(
+    (a, b) => a.value - b.value || a.source.localeCompare(b.source)
+  );
+  if (unique.length < 2) return null;
+
+  const candidates = new Map<string, SourceResult[]>();
+  for (let start = 0; start < unique.length; start++) {
+    for (let end = start + 1; end < unique.length; end++) {
+      if (unique[end].value - unique[start].value > CONSENSUS_TOLERANCE) break;
+      const group = unique.slice(start, end + 1);
+      const signature = group.map((result) => result.source).sort().join("|");
+      candidates.set(signature, group);
+    }
+  }
+  if (candidates.size === 0) return null;
+
+  const candidateGroups = Array.from(candidates.values());
+  const maxSize = Math.max(...candidateGroups.map((group) => group.length));
+  const largest = candidateGroups.filter((group) => group.length === maxSize);
+  if (largest.length !== 1) return null;
+
+  const agreedObservations = largest[0].sort((a, b) => a.source.localeCompare(b.source));
+  const consensusValue = Math.round(
+    agreedObservations.reduce((sum, result) => sum + result.value, 0) /
+      agreedObservations.length
+  );
+  const cashValues = agreedObservations.filter(
+    (result) => result.cashValue > 0 && result.cashValue <= result.value
+  );
+  const consensusCashValue = cashValues.length
+    ? Math.round(
+        cashValues.reduce((sum, result) => sum + result.cashValue, 0) /
+          cashValues.length
+      )
+    : 0;
+
+  return {
+    consensusValue,
+    consensusCashValue,
+    agreedSources: agreedObservations.map((result) => result.source),
+    agreedObservations,
+  };
 }
 
 function startPowerballCatchup(consensusValue: number) {
@@ -371,11 +423,20 @@ async function fetchAndVerify(): Promise<VerificationResult> {
       if (pbOutlier) startPowerballCatchup(consensus.consensusValue);
     }
 
+    const sourceObservedAt = new Date(
+      Math.max(
+        ...consensus.agreedObservations.map((observation) =>
+          Date.parse(observation.fetchedAt)
+        )
+      )
+    );
     const result: VerificationResult = {
       verifiedValue: consensus.consensusValue,
       verifiedCashValue: consensus.consensusCashValue,
       verificationStatus: "verified",
       verificationSources: consensus.agreedSources,
+      sourceObservations: results,
+      sourceObservedAt,
       verifiedAt: new Date(),
     };
     lastVerifiedResult = result;
@@ -394,6 +455,8 @@ async function fetchAndVerify(): Promise<VerificationResult> {
     verifiedCashValue: 0,
     verificationStatus: "unconfirmed",
     verificationSources: [],
+    sourceObservations: results,
+    sourceObservedAt: new Date(),
     verifiedAt: new Date(),
   };
 }

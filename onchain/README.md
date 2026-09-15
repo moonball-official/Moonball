@@ -10,19 +10,26 @@ trades at.
 There is **no protocol mint, no redemption, no collateral treasury, and no peg
 to defend.** The token is immutable and ownerless once deployed.
 
+The accepted v1 architecture is defined in
+[`../docs/architecture/FOUNDER_DECISIONS.md`](../docs/architecture/FOUNDER_DECISIONS.md).
+This README describes the current implementation and its remaining gaps; the
+founder decision record controls if the two conflict.
+
 This is an **isolated Hardhat project**. It has its own `package.json`,
 config, and test/scripts and does **not** touch the running dashboard
 (Express/React/Postgres). The dashboard is the off-chain data source; the
 `bridge` script is the only link between the two.
 
-> ⚠️ Not deployed to any live network and not audited. See **Production gaps**.
+> ⚠️ There is no current supported deployment and the contracts are not audited.
+> The recorded 2026-06-08 Base Sepolia addresses are explicitly deprecated. See
+> **Production gaps**.
 
 ## Contracts
 
 | Contract | Purpose |
 | --- | --- |
-| `MoonballToken.sol` | The MOON ERC-20. Fixed supply (100M MOON) minted once at deployment to a single recipient (the DEX liquidity seeder). No mint, redeem, peg, treasury, or admin — immutable and ownerless. |
-| `JackpotOracle.sol` | Stores the latest verified jackpot and exposes an informational reference value. Only an authorized updater (the bridge) can push data; enforces $20M–$5B sanity bounds and staleness. |
+| `MoonballToken.sol` | The MOON ERC-20. Exactly 100M MOON is hardcoded and minted once at deployment to a single recipient. No mint, redeem, peg, treasury, or admin — immutable and ownerless after deployment. |
+| `JackpotOracle.sol` | Stores sequenced, source-timestamped jackpot snapshots and exposes an informational reference value. Enforces replay, chronology, cash, $20M–$5B, and source-age guards. |
 | `interfaces/IJackpotOracle.sol` | Oracle interface. |
 | `mocks/MockUSDC.sol` | 6-decimal test USDC (open `mint`), usable as a DEX pair token in tests. Test only. |
 
@@ -30,17 +37,20 @@ config, and test/scripts and does **not** touch the running dashboard
 
 - **Price is set by the market, not the protocol.** MOON has a fixed supply that
   is minted in full at deployment (100M tokens). The protocol never creates or
-  destroys tokens after that, never holds collateral, and never buys or sells MOON.
-  Whatever the DEX pool says MOON is worth, that's the price.
+  destroys tokens after that and never holds collateral. V1 has no automatic,
+  mandatory, or price-defense trading. Whatever the DEX pool says MOON is worth,
+  that's the price.
 - **The oracle publishes a reference value, not a peg.** `oracleReferenceValueWad()`
   returns a linear reference derived from public jackpot data ($10 at the $20M
   floor, +$10 per $20M — i.e. `jackpotMillions / 2` dollars, so $225M ⇒ $112.50).
   The token does not read this value; nothing on-chain forces the market price
   toward it. It exists so the on-chain surface can publish the same reference the
   dashboard shows.
-- **Oracle integrity.** Only the authorized updater (the bridge keeper) can push
-  data. The oracle enforces $20M–$5B sanity bounds and a staleness threshold so
-  consumers can tell when the reference is fresh.
+- **Oracle integrity.** Only the authorized updater can push. Phase 2 adds
+  monotonic sequences, deterministic snapshot/cycle/draw IDs, permanent replay
+  protection, cash and draw-chronology checks, and freshness measured from the
+  source observation rather than transaction time. See
+  [`../docs/architecture/PHASE_2_ORACLE_HARDENING.md`](../docs/architecture/PHASE_2_ORACLE_HARDENING.md).
 - **Immutable token.** `MoonballToken` has no owner and no admin functions. What
   ships is what holders get — there is no pause, no fee switch, and no upgrade path.
 
@@ -48,68 +58,76 @@ config, and test/scripts and does **not** touch the running dashboard
 
 The full 100M MOON is minted at genesis to the treasury/LP-seeder wallet. **Not
 all 100M is released at once.** The treasury holds and releases tokens according
-to the allocation buckets below. Token allocation is sized based on estimated
-pre-launch traffic and the initial pool price equilibrium (set to the oracle's
-risk-adjusted value at the time of seeding).
+to the allocation buckets below. The Safe approves the initial pool seed and
+price. Oracle values are informational inputs, not an automatic price-setting
+instruction.
 
 | Bucket | % | MOON | Notes |
 |---|---|---|---|
 | Founder | 20% | 20M | Solo founder. 1-year cliff, 4-year vesting. |
 | Investors | 15% | 15M | Seed round that funds initial pool capital and operations. Vesting per term sheet. |
-| Treasury | 35% | 35M | Funds the initial MOON/USDC pool seed (POL), future POL top-ups, buybacks, operations. Phased release by governance. |
+| Treasury | 35% | 35M | Funds the initial MOON/USDC pool seed (POL), future POL management, and operations. Phased release by governance. |
 | Community & Incentives | 30% | 30M | Trading rewards, LP incentives, ecosystem growth. Gradual 4-year release. |
 
 > The initial pool seed (protocol-owned liquidity) is funded out of the Treasury
 > bucket — it is not a separate named allocation. The seed amount is computed at
 > launch using the pool size calculator.
 
-**Buybacks:** the treasury operations budget may buy back MOON from the open
-market. Buybacks use the 50% operations portion of the protocol skim (see Fee
-Structure below), not a separate reserve.
+**Buybacks:** v1 contains no automatic, mandatory, price-defense, promised, or
+guaranteed buyback. Governance may consider future discretionary treasury action
+only after legal, regulatory, treasury, and governance review; that possibility
+does not create a price-support or redemption obligation.
 
 ## Fee Structure
 
-All fees are at the pool/router layer. The token contract is 0% fee, immutable.
+The trader pays the standard Uniswap v3 pool fee only. The token has no transfer
+fee and Moonball adds no router surcharge.
 
 | Layer | Parameter | Value |
 |---|---|---|
 | Token contract | Transfer fee | 0% — immutable, no fee switch |
 | DEX pool | Swap fee tier | 1% (Uniswap v3 10000-bps tier) at launch |
-| Protocol skim | Router-layer take | 12% of each swap fee → treasury |
-| LP share | Remainder | 88% of each swap fee → liquidity providers |
+| Moonball protocol allocation | On collection of Moonball POL fees | 12% of each collected token amount → protocol treasury |
+| POL retained share | Remainder of collected Moonball POL fees | 88% remains with POL |
 
-### Liquidity Growth Policy
+Fees earned by third-party LP positions are unaffected. The 12/88 allocation is
+not Uniswap v3's native protocol-fee switch; it occurs only when the Safe
+collects fees earned by Moonball-owned POL positions. The Safe may collect
+directly to an audited, narrowly scoped splitter while retaining ownership of
+the position NFT.
 
-100% of the protocol skim is split automatically:
-- **50% → Protocol-Owned Liquidity (POL):** reinvested back into the MOON/USDC
-  pool to deepen spreads. Never withdrawn to defend price.
-- **50% → Operations:** oracle infrastructure, audits, and development.
+### Treasury Policy
 
-This split is the defined Liquidity Growth Policy and is published on-chain.
+The current treasury policy targets 50% for POL and 50% for operations. This is
+not an immutable or automatic on-chain split. The Safe may change treasury
+policy through authorized governance with transparent accounting. POL may be
+withdrawn or migrated for legitimate governance, security, recovery, or
+infrastructure reasons, but never to satisfy a redemption or price guarantee.
 
 ### Fee Tier Glide Path
 
-As pool TVL grows, the fee tier steps down to attract more volume:
+The launch fee is 1%. A future governance-approved migration may consider a
+lower fee such as 0.30%; TVL does not trigger an automatic change.
 
 | Pool TVL | Fee tier | Trigger |
 |---|---|---|
 | Launch | 1.00% (10000 bps) | Initial deployment |
-| $500K+ | 0.30% (3000 bps) | Governance vote at milestone |
-
-Deeper pool → lower fee → more volume → more skim → more POL (compounding flywheel).
+| Future option | 0.30% (3000 bps) | Separate governance-approved migration or configuration |
 
 ### Pool Seeding Formula
 
-The initial MOON/USDC seed amounts are chosen so:
-1. **Launch price = oracle's risk-adjusted value** at the time of pool creation.
-   This anchors the "Market Efficiency" metric at 100% on day one.
-2. **Pool depth** is sized to daily volume forecasts:
+The initial MOON/USDC seed amounts are chosen so pool depth is sized to approved
+liquidity and volume assumptions:
+
    `USDC_needed = daily_volume × 0.05 / (target_impact_pct / 100)`
+
    where target_impact_pct is the desired max price impact per trade (e.g. 1%).
+
    `MOON_needed = USDC_needed / launch_price`
 
-Use the pre-launch calculator on the Protocol page of the dashboard to compute
-the exact seed amounts from a traffic estimate.
+The launch price is an explicit Safe/governance-approved deployment parameter.
+The oracle reference may be displayed as a scenario, but it must not
+automatically initialize the pool or be represented as a guaranteed price.
 
 ## Layout
 
@@ -120,7 +138,8 @@ onchain/
   scripts/
     deploy.ts             Deploy oracle + token, record addresses (deployments/<network>.json)
     bridge.ts             Off-chain oracle bridge (dashboard → on-chain)
-    transfer-ownership.ts Move oracle ownership to a Safe (token is ownerless)
+    bridge-lib.ts         Strict payload validation + deterministic snapshot encoding
+    transfer-ownership.ts Start/complete the oracle's two-step ownership transfer
   hardhat.config.ts
 ```
 
@@ -146,19 +165,26 @@ npx hardhat node
 # Terminal 2: deploy (deploys a MockUSDC pair token + the oracle + the token)
 SEED_JACKPOT_M=225 npx hardhat run scripts/deploy.ts --network localhost
 
-# Terminal 2: push the dashboard's verified jackpot on-chain, once
+# Terminal 2: local-only bridge example
 RPC_URL=http://127.0.0.1:8545 PRIVATE_KEY=0x... \
 DASHBOARD_URL=http://localhost:5000 ONCE=1 \
   npx hardhat run scripts/bridge.ts --network localhost
 ```
 
-After deployment, the recipient seeds a MOON/USDC DEX pool from its balance to
-open the market. The bridge reads `GET /api/powerball/live`, takes the
-consensus-verified `estimated` value (millions), converts to whole USD, and calls
-`fulfillJackpotData`. By default it only pushes when
-`verificationStatus === "verified"` (set `REQUIRE_VERIFIED=false` to override) and
-skips values outside the oracle's $20M–$5B bounds. Use `POLL_SECONDS=300` to run
-it as a daemon instead of a single update.
+After deployment, Moonball's authorized workflow seeds and registers the
+official MOON/USDC pool. Public Uniswap infrastructure may contain unofficial
+third-party pools, but the application must recognize only the Safe-approved
+official v1 market. The bridge reads `GET /api/powerball/live`, independently
+checks the contributing observations and consensus calculation, converts values
+to whole USD, derives deterministic identifiers, and calls
+`fulfillJackpotData`. Verification cannot be disabled. The bridge never
+fabricates draw/source timestamps and refuses deprecated deployment records.
+Use `POLL_SECONDS=300` for daemon mode; one-shot failures exit nonzero after the
+configured bounded retries. Public-network sends additionally require the exact
+`EXPECTED_SNAPSHOT_ID` and `EXPECTED_SEQUENCE` produced by a reviewed dry run.
+On Windows, use `bridge-base-sepolia-preflight.ps1` and
+`publish-base-sepolia-snapshot-with-key.ps1` so the updater key is never saved in
+the synced checkout.
 
 ### Configuration (env / `.env`)
 
@@ -167,23 +193,47 @@ it as a daemon instead of a single update.
 | `RPC_URL` | bridge, config | Chain RPC endpoint |
 | `PRIVATE_KEY` | bridge | Authorized updater key |
 | `DEPLOYER_PRIVATE_KEY` | deploy/config | Deployer key |
+| `DEPLOYER_ADDRESS` | preflight only | Public deployer address; permits read-only checks without a key and must match the signer if one is configured |
 | `ORACLE_ADDRESS` | bridge | Oracle to update (else read from `deployments/<NETWORK>.json`) |
 | `DASHBOARD_URL` | bridge | Dashboard base URL (default `http://localhost:5000`) |
-| `REQUIRE_VERIFIED` | bridge | Only push consensus-verified values (default `true`) |
+| `DRY_RUN` | bridge | `1` performs full read-only validation and transaction simulation without loading a key |
+| `EXPECTED_SNAPSHOT_ID` / `EXPECTED_SEQUENCE` | public-network bridge | Exact values from the explicitly approved dry run |
 | `POLL_SECONDS` / `ONCE` | bridge | Daemon interval / single run |
-| `USDC_ADDRESS` | deploy | DEX pair quote token; if unset a MockUSDC is deployed (test only) |
-| `UPDATER_ADDRESS` | deploy | Oracle updater / bridge keeper (e.g. a Safe) |
+| `RETRY_ATTEMPTS` / `RETRY_DELAY_MS` | bridge | Bounded retries per run/cycle (defaults: 3 / 2000ms) |
+| `USDC_ADDRESS` | deploy | DEX pair quote token; required and checked against official USDC on Base public networks; MockUSDC fallback is local only |
+| `UPDATER_ADDRESS` | deploy | Limited oracle updater / bridge keeper; required on public networks and separate from the Safe |
 | `ORACLE_STALENESS` | deploy | Seconds before oracle data is stale (default 14400) |
-| `MOON_SUPPLY` / `SUPPLY_RECIPIENT` | deploy | Genesis supply in whole MOON (use `100000000` for 100M) and the address that receives it |
-| `SEED_JACKPOT_M` | deploy | Optional jackpot (millions) to push to the oracle at deploy |
-| `SAFE_ADDRESS` | transfer-ownership | New oracle owner (multisig/timelock) |
+| `SUPPLY_RECIPIENT` | deploy | Address receiving the hardcoded 100M supply; required publicly and must be the Safe on Base mainnet |
+| `SEED_JACKPOT_M` | deploy | Optional `localhost`/Hardhat-only seed; requires deployer to be updater, otherwise use the bridge |
+| `SAFE_ADDRESS` | deploy, transfer-ownership | Moonball 2-of-3 Safe; required and contract-validated on Base mainnet |
 
-## Test results
+Public-network seed values are prohibited. Before a Base Sepolia transaction,
+run `npm run preflight -- --network baseSepolia`; afterward, run
+`npm run verify:deployment -- --network baseSepolia`. The complete controlled
+procedure is in
+[`../docs/deployment/BASE_SEPOLIA_REHEARSAL.md`](../docs/deployment/BASE_SEPOLIA_REHEARSAL.md).
+On Windows, `npm.cmd run preflight:signer` confirms local key control through a
+hidden prompt without writing the private key to `.env` or sending a transaction.
+Using `npm.cmd` avoids PowerShell's blocked `npm.ps1` shim without changing the
+system execution policy. The Windows signer and deployment wrappers require the
+checksum-verified portable Node 22 runtime under
+`%LOCALAPPDATA%\Moonball\runtimes\node-v22.23.2-win-x64`; they reject another
+Node major version before any signing operation.
+After explicit approval, `npm.cmd run deploy:base-sepolia:interactive -- -Approved`
+runs signer preflight, the Base Sepolia candidate deployment, and read-only
+post-deployment verification through one hidden, transient-key prompt.
 
-`npx hardhat test` — **16 passing**. Coverage:
+## Test coverage
 
-- **Oracle:** freshness, millions conversion, updater authorization, $20M–$5B
-  bounds, staleness expiry, reference-value math, updater rotation.
+Run `npx hardhat test` in the target checkout to obtain current pass/fail
+results. The suite covers:
+
+- **Oracle:** source-based freshness, updater authorization, value/cash and draw
+  bounds, monotonic sequences, replay protection, pause, cycle events, two-step
+  ownership, reference-value math, and safe admin configuration.
+- **Verifier and bridge:** order-independent largest-cluster consensus, tie and
+  duplicate-source rejection, provenance/timestamp validation, deterministic
+  snapshot encoding, deprecated-deployment refusal, and bounded retries.
 - **Reference vs. token decoupling:** the token never reads the oracle and exposes
   no peg/redeem surface.
 - **Token:** ERC-20 metadata, genesis supply minted to the recipient, zero-address
@@ -195,24 +245,26 @@ it as a daemon instead of a single update.
 
 1. **Professional audit** of the ERC-20 and oracle, even though the token is now a
    minimal fixed-supply contract. This is a reference implementation, not audited code.
-2. **Oracle decentralization / redundancy.** Today a single authorized updater
-   pushes data. Production should use multiple independent updaters, a
-   timelock/Safe on admin functions, and ideally a Chainlink/commit-reveal layer so
-   one compromised key can't poison the reference value.
-3. **Governance & key management.** The oracle `owner` should be a multi-sig (Safe)
-   with a timelock on `setAuthorizedUpdater`, `setStalenessThreshold`, and ownership
-   transfer. Use `scripts/transfer-ownership.ts` to move it. (The token is ownerless.)
+2. **Oracle operations.** Phase 2 implements source timestamps, identifiers,
+   replay protection, a separately limited updater, and bounded bridge retries.
+   Production still needs managed key custody, redundant RPCs, nonce/gas policy,
+   external alerting, and incident runbooks.
+3. **Governance & key management.** Configure the Moonball 2-of-3 Safe as oracle
+   owner at deployment. The Safe appoints and can revoke the limited updater; a
+   timelock is optional for the MVP. Legacy ownership moves use the two-step
+   `scripts/transfer-ownership.ts` flow. (The token is ownerless.)
 4. **Oracle bounds heuristics.** The $20M–$5B bounds are heuristics; validate
    against historical Powerball data and add per-update deviation limits.
 5. **ERC-20 completeness.** Consider EIP-2612 `permit`, and confirm the minimal
    ERC-20 implementation against the exact integrations (DEXs, bridges) you target.
-6. **DEX/market design.** Launch at 1% fee tier (Uniswap v3 10000-bps). Pool
-   seeding amounts calculated from the pre-launch calculator using expected daily
-   volume and the oracle's risk-adjusted value as the launch price. A governance
-   vote can step the fee down to 0.3% once TVL reaches $500K. Protocol skim router
-   contract (12% of swap fees → treasury) requires development and audit before mainnet.
-7. **Operational hardening of the bridge.** Add retries/alerting, redundant RPCs,
-   nonce management, gas strategy, and monitoring; run it as a managed service, not
-   a one-off script.
+6. **DEX/POL design.** Launch one continuing official MOON/USDC market at the 1%
+   Uniswap v3 tier. The 2-of-3 Safe must own the POL NFT. Build and audit fee
+   collection that sends 12% of fees collected from Moonball POL positions to
+   the protocol treasury and retains 88% with POL, without adding a trader
+   surcharge. Pool initialization and any later fee-tier migration require an
+   explicit Safe/governance decision and must not be controlled by the oracle.
+7. **Operational hardening of the bridge.** Bounded retries and fail-closed
+   one-shot exits are implemented. Add alerting, redundant RPCs, nonce management,
+   gas strategy, and service monitoring; run it as a managed service.
 8. **Legal/regulatory review** of a jackpot-referenced event-market token before any
    public launch.

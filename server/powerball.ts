@@ -1,11 +1,13 @@
-import { getVerifiedJackpot } from "./jackpot-verifier";
+import { getVerifiedJackpot, type SourceResult } from "./jackpot-verifier";
 
 export interface PowerballLiveData {
   estimated: number;
   cashValue: number;
   nextDraw: string;
+  nextDrawISO: string;
   nextDrawTime: string;
   lastDraw: string;
+  lastDrawISO: string;
   winningNumbers: number[];
   powerball: number;
   multiplier: number;
@@ -13,9 +15,10 @@ export interface PowerballLiveData {
   lastUpdated: string;
   verificationStatus: "verified" | "unconfirmed";
   verificationSources: string[];
+  sourceObservations: SourceResult[];
+  sourceObservedAt: string;
   verifiedAt: string;
 }
-
 let cachedData: PowerballLiveData | null = null;
 let cacheTimestamp = 0;
 
@@ -119,7 +122,7 @@ async function fetchWinningNumbers(): Promise<{
 
   const latestDateStr = latest.draw_date.split("T")[0];
   const [ly, lm, ld] = latestDateStr.split("-").map(Number);
-  const latestDrawDate = new Date(ly, lm - 1, ld, 12, 0, 0);
+  const latestDrawDate = formatAsETtoUTC(ly, lm - 1, ld, 22, 59);
 
   return {
     numbers: whiteBalls,
@@ -175,8 +178,10 @@ export async function fetchLivePowerballData(
       estimated: estimatedValue,
       cashValue: cashValue,
       nextDraw: formatDrawDate(nextDrawDate),
+      nextDrawISO: nextDrawDate.toISOString(),
       nextDrawTime: "10:59 PM ET",
       lastDraw: formatDrawDate(lastDrawDate),
+      lastDrawISO: lastDrawDate.toISOString(),
       winningNumbers: numbersData.numbers,
       powerball: numbersData.powerball,
       multiplier: numbersData.multiplier,
@@ -190,6 +195,8 @@ export async function fetchLivePowerballData(
       }),
       verificationStatus: verification.verificationStatus,
       verificationSources: verification.verificationSources,
+      sourceObservations: verification.sourceObservations,
+      sourceObservedAt: verification.sourceObservedAt.toISOString(),
       verifiedAt: verification.verifiedAt.toISOString(),
     };
 
@@ -201,8 +208,4 @@ export async function fetchLivePowerballData(
     if (cachedData) return cachedData;
     throw err;
   }
-}
-
-export function getNextDrawDateISO(): string {
-  return getNextDrawDate().toISOString();
 }

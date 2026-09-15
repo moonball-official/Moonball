@@ -5,46 +5,56 @@ import "./interfaces/IJackpotOracle.sol";
 
 /**
  * @title JackpotOracle
- * @notice Oracle contract that receives verified Powerball jackpot data from an
- *         authorized off-chain data pipeline (the Moonball dashboard bridge).
- *
- * @dev ARCHITECTURE:
- *      Off-chain: Multi-source verifier → consensus → bridge → fulfillJackpotData()
- *      On-chain:  This contract stores the latest verified snapshot.
- *
- *      The oracle enforces:
- *      - Only authorized updaters can push data
- *      - Staleness detection (configurable threshold)
- *      - Sanity bounds on jackpot values ($20M–$5B range)
- *      - Multi-sig or timelock can update the authorized updater
+ * @notice Stores verified Powerball snapshots from Moonball's authorized bridge.
+ * @dev This contract is reference-only. It has no authority over MOON balances,
+ *      Uniswap pools, protocol-owned liquidity, or fee collection.
  */
 contract JackpotOracle is IJackpotOracle {
-
-    // ─── STATE ────────────────────────────────────────────────────────
     JackpotData private _latestData;
 
     address public owner;
-    address public authorizedUpdater;    // Bridge / keeper address
-    uint64  public stalenessThreshold;   // Seconds before data is considered stale
+    address public pendingOwner;
+    address public authorizedUpdater;
+    uint64 public stalenessThreshold;
+    bool public updatesPaused;
 
-    // Sanity bounds (fixed)
-    uint256 public constant MIN_JACKPOT = 20_000_000;    // $20M minimum (post-reset)
-    uint256 public constant MAX_JACKPOT = 5_000_000_000; // $5B upper sanity bound
+    mapping(bytes32 => bool) public usedSnapshotIds;
 
-    // Reference-value model (informational only — NOT a peg or tradable price)
+    uint256 public constant MIN_JACKPOT = 20_000_000;
+    uint256 public constant MAX_JACKPOT = 5_000_000_000;
+    uint64 public constant MIN_STALENESS_THRESHOLD = 5 minutes;
+    uint64 public constant MAX_STALENESS_THRESHOLD = 24 hours;
+    uint64 public constant MAX_CLOCK_SKEW = 5 minutes;
+    uint256 public constant ORACLE_SCHEMA_VERSION = 2;
     uint256 public constant WAD = 1e18;
 
-    // ─── EVENTS ───────────────────────────────────────────────────────
     event UpdaterChanged(address indexed oldUpdater, address indexed newUpdater);
     event StalenessThresholdChanged(uint64 oldThreshold, uint64 newThreshold);
-    event JackpotReset(uint256 newJackpot, uint64 timestamp);
+    event UpdatesPausedChanged(bool paused);
+    event OwnershipTransferStarted(address indexed owner, address indexed pendingOwner);
+    event OwnershipTransferred(address indexed oldOwner, address indexed newOwner);
+    event ReferenceCycleChanged(
+        bytes32 indexed oldCycleId,
+        bytes32 indexed newCycleId,
+        uint64 indexed sequence,
+        bool hadWinner
+    );
 
-    // ─── ERRORS ───────────────────────────────────────────────────────
     error Unauthorized();
+    error ZeroAddress();
+    error OracleUpdatesPaused();
     error JackpotOutOfBounds(uint256 amount);
-    error InvalidTimestamp();
+    error CashValueOutOfBounds(uint256 cashValue, uint256 jackpotAmount);
+    error InvalidDrawChronology();
+    error InvalidSourceTimestamp(uint64 sourceTimestamp);
+    error InvalidSequence(uint64 expected, uint64 actual);
+    error InvalidIdentifier();
+    error SnapshotAlreadyUsed(bytes32 snapshotId);
+    error InvalidSnapshotId(bytes32 expected, bytes32 actual);
+    error SourceTimestampRegression(uint64 previous, uint64 proposed);
+    error DrawTimestampRegression(uint64 previous, uint64 proposed);
+    error InvalidStalenessThreshold(uint64 threshold);
 
-    // ─── MODIFIERS ────────────────────────────────────────────────────
     modifier onlyOwner() {
         if (msg.sender != owner) revert Unauthorized();
         _;
@@ -55,62 +65,129 @@ contract JackpotOracle is IJackpotOracle {
         _;
     }
 
-    // ─── CONSTRUCTOR ──────────────────────────────────────────────────
-    constructor(address _updater, uint64 _stalenessThreshold) {
-        owner = msg.sender;
-        authorizedUpdater = _updater;
-        stalenessThreshold = _stalenessThreshold;
+    constructor(
+        address initialOwner,
+        address initialUpdater,
+        uint64 initialStalenessThreshold
+    ) {
+        if (initialOwner == address(0) || initialUpdater == address(0)) revert ZeroAddress();
+        _validateStalenessThreshold(initialStalenessThreshold);
+
+        owner = initialOwner;
+        authorizedUpdater = initialUpdater;
+        stalenessThreshold = initialStalenessThreshold;
+
+        emit OwnershipTransferred(address(0), initialOwner);
+        emit UpdaterChanged(address(0), initialUpdater);
+        emit StalenessThresholdChanged(0, initialStalenessThreshold);
     }
 
-    // ─── ORACLE UPDATE (called by off-chain bridge / keeper) ───────────
     /**
-     * @notice Push new jackpot data from the off-chain oracle pipeline.
-     * @dev Called by the authorized updater after data verification.
-     *      Includes sanity checks to prevent corrupted data from propagating.
+     * @notice Publish a new verified source observation.
+     * @dev Sequence, identifier, source-age, value, and draw chronology checks make
+     *      stale, duplicate, replayed, and malformed updates fail closed.
      */
-    function fulfillJackpotData(
-        uint256 _jackpotAmountUsd,
-        uint256 _cashValueUsd,
-        uint64  _lastDrawTimestamp,
-        uint64  _nextDrawTimestamp,
-        bool    _hadWinner,
-        uint32  _drawsSinceReset
-    ) external onlyUpdater {
-        // Sanity: jackpot within reasonable bounds
-        if (_jackpotAmountUsd < MIN_JACKPOT || _jackpotAmountUsd > MAX_JACKPOT) {
-            revert JackpotOutOfBounds(_jackpotAmountUsd);
+    function fulfillJackpotData(JackpotUpdate calldata update) external onlyUpdater {
+        if (updatesPaused) revert OracleUpdatesPaused();
+
+        uint64 expectedSequence = _latestData.sequence + 1;
+        if (update.sequence != expectedSequence) {
+            revert InvalidSequence(expectedSequence, update.sequence);
+        }
+        if (
+            update.snapshotId == bytes32(0) ||
+            update.cycleId == bytes32(0) ||
+            update.drawId == bytes32(0)
+        ) revert InvalidIdentifier();
+        if (usedSnapshotIds[update.snapshotId]) {
+            revert SnapshotAlreadyUsed(update.snapshotId);
+        }
+        bytes32 expectedSnapshotId = computeSnapshotId(update);
+        if (update.snapshotId != expectedSnapshotId) {
+            revert InvalidSnapshotId(expectedSnapshotId, update.snapshotId);
+        }
+        if (
+            update.jackpotAmountUsd < MIN_JACKPOT ||
+            update.jackpotAmountUsd > MAX_JACKPOT
+        ) revert JackpotOutOfBounds(update.jackpotAmountUsd);
+        if (
+            update.cashValueUsd == 0 ||
+            update.cashValueUsd > update.jackpotAmountUsd
+        ) {
+            revert CashValueOutOfBounds(update.cashValueUsd, update.jackpotAmountUsd);
+        }
+        if (
+            update.lastDrawTimestamp >= update.nextDrawTimestamp ||
+            update.lastDrawTimestamp > update.sourceTimestamp ||
+            update.sourceTimestamp >= update.nextDrawTimestamp
+        ) revert InvalidDrawChronology();
+        if (
+            _latestData.sourceTimestamp != 0 &&
+            update.sourceTimestamp <= _latestData.sourceTimestamp
+        ) {
+            revert SourceTimestampRegression(
+                _latestData.sourceTimestamp,
+                update.sourceTimestamp
+            );
+        }
+        if (update.lastDrawTimestamp < _latestData.lastDrawTimestamp) {
+            revert DrawTimestampRegression(
+                _latestData.lastDrawTimestamp,
+                update.lastDrawTimestamp
+            );
         }
 
-        // Sanity: timestamps must be reasonable
-        if (_lastDrawTimestamp > block.timestamp + 1 hours) {
-            revert InvalidTimestamp();
-        }
+        uint64 publishedAt = uint64(block.timestamp);
+        if (
+            update.sourceTimestamp == 0 ||
+            update.sourceTimestamp > publishedAt + MAX_CLOCK_SKEW ||
+            (
+                publishedAt > update.sourceTimestamp &&
+                publishedAt - update.sourceTimestamp > stalenessThreshold
+            )
+        ) revert InvalidSourceTimestamp(update.sourceTimestamp);
 
-        bool isReset = _hadWinner && _latestData.jackpotAmountUsd > 0;
+        bytes32 oldCycleId = _latestData.cycleId;
+        usedSnapshotIds[update.snapshotId] = true;
 
         _latestData = JackpotData({
-            jackpotAmountUsd:  _jackpotAmountUsd,
-            cashValueUsd:      _cashValueUsd,
-            lastDrawTimestamp:  _lastDrawTimestamp,
-            nextDrawTimestamp:  _nextDrawTimestamp,
-            hadWinner:         _hadWinner,
-            drawsSinceReset:   _drawsSinceReset,
-            lastUpdated:       uint64(block.timestamp)
+            sequence: update.sequence,
+            snapshotId: update.snapshotId,
+            cycleId: update.cycleId,
+            drawId: update.drawId,
+            jackpotAmountUsd: update.jackpotAmountUsd,
+            cashValueUsd: update.cashValueUsd,
+            lastDrawTimestamp: update.lastDrawTimestamp,
+            nextDrawTimestamp: update.nextDrawTimestamp,
+            sourceTimestamp: update.sourceTimestamp,
+            hadWinner: update.hadWinner,
+            drawsSinceReset: update.drawsSinceReset,
+            lastUpdated: publishedAt
         });
 
         emit JackpotUpdated(
-            _jackpotAmountUsd,
-            _hadWinner,
-            _drawsSinceReset,
-            uint64(block.timestamp)
+            update.sequence,
+            update.snapshotId,
+            update.drawId,
+            update.cycleId,
+            update.jackpotAmountUsd,
+            update.cashValueUsd,
+            update.sourceTimestamp,
+            update.hadWinner,
+            update.drawsSinceReset,
+            publishedAt
         );
 
-        if (isReset) {
-            emit JackpotReset(_jackpotAmountUsd, uint64(block.timestamp));
+        if (oldCycleId != bytes32(0) && oldCycleId != update.cycleId) {
+            emit ReferenceCycleChanged(
+                oldCycleId,
+                update.cycleId,
+                update.sequence,
+                update.hadWinner
+            );
         }
     }
 
-    // ─── READ FUNCTIONS ───────────────────────────────────────────────
     function getLatestJackpot() external view override returns (JackpotData memory) {
         return _latestData;
     }
@@ -119,36 +196,76 @@ contract JackpotOracle is IJackpotOracle {
         return _latestData.jackpotAmountUsd / 1_000_000;
     }
 
-    /**
-     * @notice Informational reference value per MOON, in 18-decimal WAD dollars.
-     * @dev Linear model that mirrors the dashboard's oracle reference: a $10 base
-     *      value at the $20M jackpot floor, growing $10 for every additional $20M
-     *      of jackpot — i.e. (jackpotMillions / 2) dollars. A $225M jackpot yields
-     *      $112.50. This is published purely as a reference; the protocol never
-     *      mints, redeems, or trades MOON at this value.
-     */
     function oracleReferenceValueWad() external view override returns (uint256) {
         uint256 jackpotMillions = _latestData.jackpotAmountUsd / 1_000_000;
         return (jackpotMillions * WAD) / 2;
     }
 
+    /// @notice Deterministically derives the identifier bound to update contents.
+    /// @dev Sequence is excluded so an already accepted observation cannot be
+    ///      relabeled with a later sequence and replayed.
+    function computeSnapshotId(
+        JackpotUpdate calldata update
+    ) public pure returns (bytes32) {
+        return keccak256(
+            abi.encodePacked(
+                update.cycleId,
+                update.drawId,
+                update.jackpotAmountUsd,
+                update.cashValueUsd,
+                update.lastDrawTimestamp,
+                update.nextDrawTimestamp,
+                update.sourceTimestamp,
+                update.hadWinner,
+                update.drawsSinceReset
+            )
+        );
+    }
+
     function isFresh() external view override returns (bool) {
-        if (_latestData.lastUpdated == 0) return false;
-        return (block.timestamp - _latestData.lastUpdated) <= stalenessThreshold;
+        uint64 sourceTimestamp = _latestData.sourceTimestamp;
+        if (sourceTimestamp == 0) return false;
+        if (sourceTimestamp > block.timestamp) {
+            return sourceTimestamp - block.timestamp <= MAX_CLOCK_SKEW;
+        }
+        return block.timestamp - sourceTimestamp <= stalenessThreshold;
     }
 
-    // ─── ADMIN ────────────────────────────────────────────────────────
-    function setAuthorizedUpdater(address _newUpdater) external onlyOwner {
-        emit UpdaterChanged(authorizedUpdater, _newUpdater);
-        authorizedUpdater = _newUpdater;
+    function setAuthorizedUpdater(address newUpdater) external onlyOwner {
+        if (newUpdater == address(0)) revert ZeroAddress();
+        emit UpdaterChanged(authorizedUpdater, newUpdater);
+        authorizedUpdater = newUpdater;
     }
 
-    function setStalenessThreshold(uint64 _newThreshold) external onlyOwner {
-        emit StalenessThresholdChanged(stalenessThreshold, _newThreshold);
-        stalenessThreshold = _newThreshold;
+    function setStalenessThreshold(uint64 newThreshold) external onlyOwner {
+        _validateStalenessThreshold(newThreshold);
+        emit StalenessThresholdChanged(stalenessThreshold, newThreshold);
+        stalenessThreshold = newThreshold;
     }
 
-    function transferOwnership(address _newOwner) external onlyOwner {
-        owner = _newOwner;
+    function setUpdatesPaused(bool paused) external onlyOwner {
+        updatesPaused = paused;
+        emit UpdatesPausedChanged(paused);
+    }
+
+    function transferOwnership(address newOwner) external onlyOwner {
+        if (newOwner == address(0)) revert ZeroAddress();
+        pendingOwner = newOwner;
+        emit OwnershipTransferStarted(owner, newOwner);
+    }
+
+    function acceptOwnership() external {
+        if (msg.sender != pendingOwner) revert Unauthorized();
+        address oldOwner = owner;
+        owner = msg.sender;
+        pendingOwner = address(0);
+        emit OwnershipTransferred(oldOwner, msg.sender);
+    }
+
+    function _validateStalenessThreshold(uint64 threshold) private pure {
+        if (
+            threshold < MIN_STALENESS_THRESHOLD ||
+            threshold > MAX_STALENESS_THRESHOLD
+        ) revert InvalidStalenessThreshold(threshold);
     }
 }

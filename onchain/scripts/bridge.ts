@@ -1,151 +1,306 @@
 /**
  * Moonball oracle bridge.
  *
- * Reads the dashboard's verified jackpot (the multi-source consensus value from
- * /api/powerball/live) and pushes it on-chain via JackpotOracle.fulfillJackpotData().
- * Standalone: uses ethers v6 directly, so it never pulls the dashboard's app code
- * or web3 libraries into the running server.
- *
- * Run once (CI / cron):     ONCE=1 npx hardhat run scripts/bridge.ts
- * Run as a daemon:          POLL_SECONDS=300 npx hardhat run scripts/bridge.ts
- * Local test (hardhat node): RPC_URL=http://127.0.0.1:8545 PRIVATE_KEY=0x.. \
- *                            ORACLE_ADDRESS=0x.. ONCE=1 npx hardhat run scripts/bridge.ts
- *
- * Config (env / .env):
- *   RPC_URL          — chain RPC endpoint (required)
- *   PRIVATE_KEY      — updater key authorized on the oracle (required)
- *   ORACLE_ADDRESS   — JackpotOracle address; falls back to deployments/<NETWORK>.json
- *   NETWORK          — deployments file to read when ORACLE_ADDRESS is unset (default: localhost)
- *   DASHBOARD_URL    — base URL of the Moonball dashboard (default: http://localhost:5000)
- *   REQUIRE_VERIFIED — only push consensus-verified values (default: true)
- *   POLL_SECONDS     — daemon poll interval; 0 / unset + ONCE=1 means single run
- *   ONCE             — set to run a single update and exit
+ * Reads a consensus-verified dashboard snapshot, validates its source provenance,
+ * and publishes the reference-only update to JackpotOracle. One-shot failures
+ * exit non-zero so a scheduler can alert; daemon mode retries a bounded number of
+ * times per polling cycle and then waits for the next cycle.
  */
 import { ethers } from "ethers";
 import * as fs from "fs";
 import * as path from "path";
+import {
+  buildOracleUpdate,
+  validateDashboardUrl,
+  validateDeploymentRecord,
+  withRetries,
+} from "./bridge-lib";
 
 const ORACLE_ABI = [
-  "function fulfillJackpotData(uint256 jackpotAmountUsd, uint256 cashValueUsd, uint64 lastDrawTimestamp, uint64 nextDrawTimestamp, bool hadWinner, uint32 drawsSinceReset) external",
-  "function getJackpotMillions() external view returns (uint256)",
-  "function isFresh() external view returns (bool)",
-  "function MIN_JACKPOT() external view returns (uint256)",
-  "function MAX_JACKPOT() external view returns (uint256)",
+  "function fulfillJackpotData((uint64 sequence, bytes32 snapshotId, bytes32 cycleId, bytes32 drawId, uint256 jackpotAmountUsd, uint256 cashValueUsd, uint64 lastDrawTimestamp, uint64 nextDrawTimestamp, uint64 sourceTimestamp, bool hadWinner, uint32 drawsSinceReset) update) external",
+  "function getLatestJackpot() view returns ((uint64 sequence, bytes32 snapshotId, bytes32 cycleId, bytes32 drawId, uint256 jackpotAmountUsd, uint256 cashValueUsd, uint64 lastDrawTimestamp, uint64 nextDrawTimestamp, uint64 sourceTimestamp, bool hadWinner, uint32 drawsSinceReset, uint64 lastUpdated))",
+  "function getJackpotMillions() view returns (uint256)",
+  "function isFresh() view returns (bool)",
+  "function MIN_JACKPOT() view returns (uint256)",
+  "function MAX_JACKPOT() view returns (uint256)",
+  "function stalenessThreshold() view returns (uint64)",
+  "function authorizedUpdater() view returns (address)",
+  "function updatesPaused() view returns (bool)",
+  "function usedSnapshotIds(bytes32 snapshotId) view returns (bool)",
+  "function ORACLE_SCHEMA_VERSION() view returns (uint256)",
 ];
 
-interface LiveData {
-  estimated: number; // jackpot in millions USD
-  cashValue: number; // cash value in millions USD
-  nextDrawISO?: string;
-  winner?: string; // "Yes" | "No"
-  drawsInCurrentCycle?: number;
-  verificationStatus?: "verified" | "unconfirmed";
-}
-
 function env(name: string, fallback?: string): string {
-  const v = process.env[name];
-  if (v === undefined || v === "") {
+  const value = process.env[name];
+  if (value === undefined || value === "") {
     if (fallback !== undefined) return fallback;
     throw new Error(`Missing required env var: ${name}`);
   }
-  return v;
+  return value;
 }
 
-function resolveOracleAddress(): string {
-  if (process.env.ORACLE_ADDRESS) return process.env.ORACLE_ADDRESS;
-  const net = process.env.NETWORK || "localhost";
-  const file = path.join(__dirname, "..", "deployments", `${net}.json`);
+function resolveRpcUrl(networkName: string): string {
+  const networkSpecific =
+    networkName === "baseSepolia"
+      ? process.env.BASE_SEPOLIA_RPC_URL
+      : networkName === "base"
+        ? process.env.BASE_RPC_URL
+        : undefined;
+  return networkSpecific || env("RPC_URL", networkName === "localhost" ? "http://127.0.0.1:8545" : undefined);
+}
+
+function expectedChainId(networkName: string): bigint | undefined {
+  if (networkName === "baseSepolia") return 84532n;
+  if (networkName === "base") return 8453n;
+  if (networkName === "localhost" || networkName === "hardhat") return 31337n;
+  return undefined;
+}
+
+function boundedInteger(
+  name: string,
+  fallback: number,
+  minimum: number,
+  maximum: number
+): number {
+  const value = Number(process.env[name] ?? fallback);
+  if (!Number.isSafeInteger(value) || value < minimum || value > maximum) {
+    throw new Error(`${name} must be a whole number from ${minimum} through ${maximum}.`);
+  }
+  return value;
+}
+
+function resolveOracleAddress(networkName: string): string {
+  if (process.env.ORACLE_ADDRESS) {
+    if (!ethers.isAddress(process.env.ORACLE_ADDRESS)) {
+      throw new Error("ORACLE_ADDRESS must be a valid address.");
+    }
+    return ethers.getAddress(process.env.ORACLE_ADDRESS);
+  }
+
+  const file = path.join(__dirname, "..", "deployments", `${networkName}.json`);
   if (!fs.existsSync(file)) {
-    throw new Error(`ORACLE_ADDRESS unset and ${file} not found. Deploy first or set ORACLE_ADDRESS.`);
+    throw new Error(
+      `ORACLE_ADDRESS is unset and ${file} was not found. Deploy first or set ORACLE_ADDRESS.`
+    );
   }
-  return JSON.parse(fs.readFileSync(file, "utf8")).oracle as string;
+  return validateDeploymentRecord(JSON.parse(fs.readFileSync(file, "utf8")));
 }
 
-async function fetchLive(dashboardUrl: string): Promise<LiveData> {
+async function fetchLive(dashboardUrl: string): Promise<unknown> {
   const url = `${dashboardUrl.replace(/\/$/, "")}/api/powerball/live`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Dashboard returned ${res.status} for ${url}`);
-  return (await res.json()) as LiveData;
+  const response = await fetch(url, { signal: AbortSignal.timeout(15_000) });
+  if (!response.ok) throw new Error(`Dashboard returned ${response.status} for ${url}.`);
+  return response.json();
 }
 
-async function pushUpdate(oracle: ethers.Contract, live: LiveData): Promise<boolean> {
-  const requireVerified = env("REQUIRE_VERIFIED", "true").toLowerCase() !== "false";
-  if (requireVerified && live.verificationStatus !== "verified") {
-    console.log(`⏭  Skipping: jackpot not consensus-verified (status=${live.verificationStatus}).`);
-    return false;
+interface PushOptions {
+  dryRun: boolean;
+  approvedSnapshotId?: string;
+  approvedSequence?: string;
+  authorizedUpdater: string;
+}
+
+function parseApprovedSequence(value: string | undefined): bigint | undefined {
+  if (value === undefined || value === "") return undefined;
+  if (!/^\d+$/.test(value)) throw new Error("EXPECTED_SEQUENCE must be a positive integer.");
+  const sequence = BigInt(value);
+  if (sequence < 1n || sequence >= (1n << 64n)) {
+    throw new Error("EXPECTED_SEQUENCE must fit in uint64 and be at least 1.");
+  }
+  return sequence;
+}
+
+function printSnapshotPreview(update: ReturnType<typeof buildOracleUpdate>): void {
+  console.log("Oracle snapshot preview:");
+  console.log(`  Sequence:        ${update.sequence}`);
+  console.log(`  Snapshot ID:     ${update.snapshotId}`);
+  console.log(`  Cycle ID:        ${update.cycleId}`);
+  console.log(`  Draw ID:         ${update.drawId}`);
+  console.log(`  Jackpot:         $${update.jackpotAmountUsd / 1_000_000n}M`);
+  console.log(`  Cash value:      $${update.cashValueUsd / 1_000_000n}M`);
+  console.log(`  Last draw:       ${new Date(Number(update.lastDrawTimestamp) * 1_000).toISOString()}`);
+  console.log(`  Next draw:       ${new Date(Number(update.nextDrawTimestamp) * 1_000).toISOString()}`);
+  console.log(`  Source observed: ${new Date(Number(update.sourceTimestamp) * 1_000).toISOString()}`);
+  console.log(`  Had winner:      ${update.hadWinner}`);
+  console.log(`  Draws since reset: ${update.drawsSinceReset}`);
+}
+
+async function pushUpdate(
+  oracle: ethers.Contract,
+  live: unknown,
+  options: PushOptions
+): Promise<boolean> {
+  const [latest, staleness, minimum, maximum, paused] = await Promise.all([
+    oracle.getLatestJackpot(),
+    oracle.stalenessThreshold(),
+    oracle.MIN_JACKPOT(),
+    oracle.MAX_JACKPOT(),
+    oracle.updatesPaused(),
+  ]);
+  if (paused) throw new Error("Oracle updates are paused by the owner.");
+
+  const update = buildOracleUpdate(
+    live,
+    BigInt(latest.sequence),
+    Number(staleness)
+  );
+  if (update.jackpotAmountUsd < minimum || update.jackpotAmountUsd > maximum) {
+    throw new Error("Snapshot is outside the deployed oracle's jackpot bounds.");
   }
 
-  const jackpotUsd = BigInt(Math.round(live.estimated)) * 1_000_000n;
-  const cashUsd = BigInt(Math.round(live.cashValue || 0)) * 1_000_000n;
-
-  // Respect oracle sanity bounds to avoid a guaranteed revert.
-  const min = await oracle.MIN_JACKPOT();
-  const max = await oracle.MAX_JACKPOT();
-  if (jackpotUsd < min || jackpotUsd > max) {
-    console.log(`⏭  Skipping: $${live.estimated}M outside oracle bounds.`);
-    return false;
+  const expectedSequence = parseApprovedSequence(options.approvedSequence);
+  if (
+    options.approvedSnapshotId &&
+    !/^0x[0-9a-fA-F]{64}$/.test(options.approvedSnapshotId)
+  ) {
+    throw new Error("EXPECTED_SNAPSHOT_ID must be a bytes32 hex value.");
+  }
+  if (
+    options.approvedSnapshotId &&
+    options.approvedSnapshotId.toLowerCase() !== update.snapshotId.toLowerCase()
+  ) {
+    throw new Error(
+      `Snapshot changed after approval: expected ${options.approvedSnapshotId}, received ${update.snapshotId}.`
+    );
+  }
+  if (expectedSequence !== undefined && expectedSequence !== update.sequence) {
+    throw new Error(
+      `Oracle sequence changed after approval: expected ${expectedSequence}, received ${update.sequence}.`
+    );
   }
 
-  const nowSec = Math.floor(Date.now() / 1000);
-  const nextDraw = live.nextDrawISO
-    ? Math.floor(new Date(live.nextDrawISO).getTime() / 1000)
-    : nowSec + 2 * 24 * 60 * 60;
-  const hadWinner = (live.winner || "No").toLowerCase() === "yes";
-  const drawsSinceReset = Math.max(0, Math.floor(live.drawsInCurrentCycle ?? 0));
+  printSnapshotPreview(update);
+
+  if (String(latest.snapshotId).toLowerCase() === update.snapshotId.toLowerCase()) {
+    console.log(`No update: snapshot ${update.snapshotId} is already current.`);
+    return false;
+  }
+  if (await oracle.usedSnapshotIds(update.snapshotId)) {
+    throw new Error(`Refusing replay of previously accepted snapshot ${update.snapshotId}.`);
+  }
+
+  if (options.dryRun) {
+    await oracle.fulfillJackpotData.staticCall(update, {
+      from: options.authorizedUpdater,
+    });
+    console.log("Read-only transaction simulation PASSED; no signature requested and no transaction sent.");
+    return false;
+  }
 
   console.log(
-    `→ Pushing $${live.estimated}M (cash $${live.cashValue}M, draws ${drawsSinceReset}, winner ${hadWinner})…`
+    `Publishing sequence ${update.sequence}: $${update.jackpotAmountUsd / 1_000_000n}M ` +
+      `(cash $${update.cashValueUsd / 1_000_000n}M, source ${update.sourceTimestamp}).`
   );
-  const tx = await oracle.fulfillJackpotData(
-    jackpotUsd,
-    cashUsd,
-    BigInt(nowSec),
-    BigInt(nextDraw),
-    hadWinner,
-    drawsSinceReset
+  const transaction = await oracle.fulfillJackpotData(update);
+  const receipt = await transaction.wait();
+  console.log(
+    `Confirmed in block ${receipt?.blockNumber}. On-chain jackpot: ` +
+      `$${await oracle.getJackpotMillions()}M; fresh=${await oracle.isFresh()}.`
   );
-  const receipt = await tx.wait();
-  console.log(`✓ Confirmed in block ${receipt?.blockNumber}. On-chain now reads $${await oracle.getJackpotMillions()}M, fresh=${await oracle.isFresh()}.`);
   return true;
 }
 
 async function main() {
-  const rpcUrl = env("RPC_URL");
-  const privateKey = env("PRIVATE_KEY");
-  const dashboardUrl = env("DASHBOARD_URL", "http://localhost:5000");
-  const oracleAddress = resolveOracleAddress();
+  const networkName = env("NETWORK", "localhost");
+  const rpcUrl = resolveRpcUrl(networkName);
+  const dryRun = process.env.DRY_RUN === "1";
+  const dashboardUrl = validateDashboardUrl(
+    env("DASHBOARD_URL", "http://localhost:5000")
+  );
+  const oracleAddress = resolveOracleAddress(networkName);
+  const retryAttempts = boundedInteger("RETRY_ATTEMPTS", 3, 1, 10);
+  const retryDelayMs = boundedInteger("RETRY_DELAY_MS", 2_000, 0, 60_000);
 
   const provider = new ethers.JsonRpcProvider(rpcUrl);
-  const wallet = new ethers.Wallet(privateKey, provider);
-  const oracle = new ethers.Contract(oracleAddress, ORACLE_ABI, wallet);
+  const chain = await provider.getNetwork();
+  const requiredChainId = expectedChainId(networkName);
+  if (requiredChainId !== undefined && chain.chainId !== requiredChainId) {
+    throw new Error(
+      `RPC chain mismatch: ${networkName} requires ${requiredChainId}, received ${chain.chainId}.`
+    );
+  }
 
-  console.log(`Bridge → oracle ${oracleAddress} as ${wallet.address}`);
-  console.log(`Source → ${dashboardUrl}/api/powerball/live`);
-
-  const pollSeconds = Number(process.env.POLL_SECONDS || 0);
-  const once = process.env.ONCE === "1" || pollSeconds <= 0;
-
-  const tick = async () => {
-    try {
-      const live = await fetchLive(dashboardUrl);
-      await pushUpdate(oracle, live);
-    } catch (e) {
-      console.error(`✗ Update failed: ${(e as Error).message}`);
+  const readOnlyOracle = new ethers.Contract(oracleAddress, ORACLE_ABI, provider);
+  const schemaVersion = await readOnlyOracle.ORACLE_SCHEMA_VERSION();
+  if (schemaVersion !== 2n) {
+    throw new Error(
+      `Oracle ${oracleAddress} reports unsupported schema version ${schemaVersion}.`
+    );
+  }
+  const configuredUpdater = ethers.getAddress(await readOnlyOracle.authorizedUpdater());
+  if (process.env.UPDATER_ADDRESS) {
+    if (!ethers.isAddress(process.env.UPDATER_ADDRESS)) {
+      throw new Error("UPDATER_ADDRESS must be a valid address.");
     }
-  };
+    if (ethers.getAddress(process.env.UPDATER_ADDRESS) !== configuredUpdater) {
+      throw new Error(
+        `UPDATER_ADDRESS does not match the oracle updater ${configuredUpdater}.`
+      );
+    }
+  }
 
-  await tick();
-  if (once) return;
+  let oracle = readOnlyOracle;
+  let bridgeAddress = configuredUpdater;
+  if (!dryRun) {
+    if (
+      (networkName === "baseSepolia" || networkName === "base") &&
+      (!process.env.EXPECTED_SNAPSHOT_ID || !process.env.EXPECTED_SEQUENCE)
+    ) {
+      throw new Error(
+        "Public-network publication requires EXPECTED_SNAPSHOT_ID and EXPECTED_SEQUENCE from an approved dry run."
+      );
+    }
+    const privateKey = process.env.PRIVATE_KEY || process.env.DEPLOYER_PRIVATE_KEY;
+    if (!privateKey) throw new Error("Missing required env var: PRIVATE_KEY");
+    const wallet = new ethers.Wallet(privateKey, provider);
+    if (wallet.address !== configuredUpdater) {
+      throw new Error(
+        `Bridge wallet ${wallet.address} is not the authorized updater ${configuredUpdater}.`
+      );
+    }
+    if ((await provider.getBalance(wallet.address)) === 0n) {
+      throw new Error("Bridge updater has no native ETH for gas.");
+    }
+    oracle = new ethers.Contract(oracleAddress, ORACLE_ABI, wallet);
+    bridgeAddress = wallet.address;
+  }
 
-  console.log(`Polling every ${pollSeconds}s. Ctrl+C to stop.`);
-  // eslint-disable-next-line no-constant-condition
+  console.log(`${dryRun ? "Bridge preflight" : "Bridge"}: ${bridgeAddress} -> oracle ${oracleAddress}`);
+  console.log(`Network: ${networkName} (${chain.chainId})`);
+  console.log(`Source: ${dashboardUrl.replace(/\/$/, "")}/api/powerball/live`);
+
+  const pollSeconds = boundedInteger("POLL_SECONDS", 0, 0, 86_400);
+  const once = dryRun || process.env.ONCE === "1" || pollSeconds === 0;
+  const runCycle = () =>
+    withRetries(
+      async () =>
+        pushUpdate(oracle, await fetchLive(dashboardUrl), {
+          dryRun,
+          approvedSnapshotId: process.env.EXPECTED_SNAPSHOT_ID,
+          approvedSequence: process.env.EXPECTED_SEQUENCE,
+          authorizedUpdater: configuredUpdater,
+        }),
+      retryAttempts,
+      retryDelayMs
+    );
+
+  if (once) {
+    await runCycle();
+    return;
+  }
+
+  console.log(`Polling every ${pollSeconds}s with up to ${retryAttempts} attempts per cycle.`);
   while (true) {
-    await new Promise((r) => setTimeout(r, pollSeconds * 1000));
-    await tick();
+    try {
+      await runCycle();
+    } catch (error) {
+      console.error(`Update cycle failed: ${(error as Error).message}`);
+    }
+    await new Promise((resolve) => setTimeout(resolve, pollSeconds * 1_000));
   }
 }
 
-main().catch((e) => {
-  console.error(e);
+main().catch((error) => {
+  console.error(`Bridge failed: ${(error as Error).message}`);
   process.exitCode = 1;
 });

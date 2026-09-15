@@ -193,16 +193,16 @@ Market:    MOON / USDC DEX pool \u2190 traders set price`}
               <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "'Nunito Sans'", fontSize: 10 }}>
                 <thead>
                   <tr style={{ background: "rgba(245,166,35,0.08)" }}>
-                    <th style={{ padding: "6px 8px", textAlign: "left", color: T.gold, fontWeight: 700, borderBottom: `1px solid ${T.border}` }}>POOL TVL</th>
+                    <th style={{ padding: "6px 8px", textAlign: "left", color: T.gold, fontWeight: 700, borderBottom: `1px solid ${T.border}` }}>STAGE</th>
                     <th style={{ padding: "6px 8px", textAlign: "left", color: T.gold, fontWeight: 700, borderBottom: `1px solid ${T.border}` }}>FEE TIER</th>
-                    <th style={{ padding: "6px 8px", textAlign: "left", color: T.gold, fontWeight: 700, borderBottom: `1px solid ${T.border}` }}>TRIGGER</th>
+                    <th style={{ padding: "6px 8px", textAlign: "left", color: T.gold, fontWeight: 700, borderBottom: `1px solid ${T.border}` }}>AUTHORITY</th>
                   </tr>
                 </thead>
                 <tbody>
                   {TOKENOMICS.tvlGlidePath.map((tier, i) => (
                     <tr key={i} style={{ borderBottom: i < TOKENOMICS.tvlGlidePath.length - 1 ? `1px solid ${T.border}` : "none" }}>
                       <td style={{ padding: "6px 8px", color: "#fff", fontFamily: "'Bebas Neue'", fontSize: 13 }}>
-                        {tier.tvlUsd === 0 ? "Launch" : `$${(tier.tvlUsd / 1000).toFixed(0)}K+`}
+                        {tier.tvlUsd === 0 ? "Launch" : "Future"}
                       </td>
                       <td style={{ padding: "6px 8px" }}>
                         <span style={{ background: `${T.gold}20`, color: T.gold, padding: "2px 6px", borderRadius: 4, fontSize: 9, fontWeight: 700 }}>{tier.feePct}%</span>
@@ -214,10 +214,10 @@ Market:    MOON / USDC DEX pool \u2190 traders set price`}
               </table>
             </div>
             <p style={{ fontFamily: "'Rajdhani'", fontSize: 11, color: T.textMuted, lineHeight: 1.5, marginBottom: 8 }}>
-              <span style={{ color: "#fff" }}>Protocol skim:</span> {TOKENOMICS.protocolSkimPct}% of each swap fee is routed to the treasury at the router layer &mdash; separate from and in addition to the LP&apos;s share. LPs receive the remaining {TOKENOMICS.lpSharePct}% of every swap fee. The skim is not deducted from LP earnings; it is charged on top at the routing layer.
+              <span style={{ color: "#fff" }}>Moonball POL fee allocation:</span> the trader pays exactly the {TOKENOMICS.poolFeePct}% pool fee with no Moonball surcharge. When the Safe collects fees earned by Moonball-owned POL positions, {TOKENOMICS.protocolPolFeeSharePct}% goes to the protocol treasury and {TOKENOMICS.polRetainedFeePct}% remains with POL. Third-party LP fees are unaffected.
             </p>
             <p style={{ fontFamily: "'Rajdhani'", fontSize: 11, color: T.textMuted, lineHeight: 1.5 }}>
-              Protocol-owned liquidity (see &sect;6) deepens the pool to tighten spreads but is never withdrawn to defend a price.
+              The Moonball 2-of-3 Safe owns production POL position NFTs. POL may be migrated or withdrawn for legitimate governance, security, recovery, or infrastructure needs, but never to guarantee redemption or defend a price.
             </p>
           </div>
 
@@ -227,15 +227,15 @@ Market:    MOON / USDC DEX pool \u2190 traders set price`}
               6. Treasury Policy
             </h2>
             <p style={{ fontFamily: "'Rajdhani'", fontSize: 12, color: T.textSecondary, lineHeight: 1.6, marginBottom: 10 }}>
-              The treasury is fully visible on-chain. Its mandate is growth and operations &mdash; never price defense. Its revenue comes from the {TOKENOMICS.protocolSkimPct}% router skim on swap fees (see &sect;5).
+              The treasury is fully visible on-chain. Its mandate is growth and operations &mdash; never guaranteed redemption or price defense. Its fee revenue is the {TOKENOMICS.protocolPolFeeSharePct}% allocation from fees collected on Moonball-owned POL positions (see &sect;5).
             </p>
 
             {/* Liquidity Growth Policy */}
             <div style={{ background: `${T.gold}08`, border: `1px solid ${T.gold}33`, borderRadius: 10, padding: "10px 12px", marginBottom: 10 }}>
-              <div style={{ fontFamily: "'Nunito Sans'", fontSize: 10, color: T.gold, fontWeight: 700, letterSpacing: 1, marginBottom: 6 }}>LIQUIDITY GROWTH POLICY</div>
+              <div style={{ fontFamily: "'Nunito Sans'", fontSize: 10, color: T.gold, fontWeight: 700, letterSpacing: 1, marginBottom: 6 }}>CURRENT TREASURY POLICY</div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                 {[
-                  { pct: `${TOKENOMICS.treasuryPolSplit}%`, label: "POL Reinvestment", desc: "Protocol-owned liquidity. Deepens the pool — never withdrawn to defend price.", color: T.gold },
+                  { pct: `${TOKENOMICS.treasuryPolSplit}%`, label: "POL", desc: "Current treasury target for protocol-owned liquidity and approved POL management.", color: T.gold },
                   { pct: `${TOKENOMICS.treasuryOpsSplit}%`, label: "Operations", desc: "Oracle, audits, infra, and development.", color: T.blue },
                 ].map((s) => (
                   <div key={s.label} style={{ background: "rgba(0,0,0,0.3)", borderRadius: 8, padding: "8px 10px", border: `1px solid ${T.border}` }}>
@@ -245,13 +245,16 @@ Market:    MOON / USDC DEX pool \u2190 traders set price`}
                   </div>
                 ))}
               </div>
+              <div style={{ fontFamily: "'Rajdhani'", fontSize: 10, color: T.textMuted, lineHeight: 1.4, marginTop: 7 }}>
+                This 50/50 allocation is mutable Safe-governed treasury policy, not an automatic or immutable on-chain rule.
+              </div>
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
               {[
-                { label: "Seed & deepen liquidity", desc: "Protocol-owned liquidity for tighter spreads. Funded by the 50% POL split — grows automatically with trading volume." },
-                { label: "Fund the oracle", desc: "Pays for multi-source jackpot verification published on-chain. Funded by the 50% operations split." },
-                { label: "Cover operations", desc: "Audits, infrastructure, and development. Funded by the protocol skim, not by selling tokens." },
+                { label: "Manage liquidity", desc: "Protocol-owned liquidity for the official market, subject to Safe-approved treasury policy and infrastructure needs." },
+                { label: "Fund the oracle", desc: "Pays for multi-source jackpot verification under the current operations policy." },
+                { label: "Cover operations", desc: "Audits, infrastructure, and development. Funded under treasury policy from Moonball's collected POL fee allocation." },
               ].map((j) => (
                 <div key={j.label} style={{ background: "rgba(0,0,0,0.3)", borderRadius: 8, padding: "10px 12px", border: `1px solid ${T.border}` }}>
                   <div style={{ fontFamily: "'Nunito Sans'", fontSize: 11, color: T.gold, fontWeight: 700 }}>{j.label}</div>
@@ -270,7 +273,7 @@ Market:    MOON / USDC DEX pool \u2190 traders set price`}
               7. Reset Mechanics & Whale Exit
             </h2>
             <p style={{ fontFamily: "'Rajdhani'", fontSize: 12, color: T.textSecondary, lineHeight: 1.6, marginBottom: 10 }}>
-              A reset is detected when the oracle reports a jackpot that drops sharply (below 50% of the last known value), indicating a winner. The reference value falls back to its base and a new cycle begins. The market reprices on its own &mdash; there is no cooldown gating trades, because there is nothing for the protocol to pause.
+              A reset is detected when the oracle reports a jackpot that drops sharply (below 50% of the last known value), indicating a winner. The reference value falls back to its base and a new reference cycle begins. The perpetual MOON token, official pool, supply, and liquidity continue uninterrupted; the market reprices on its own.
             </p>
             <p style={{ fontFamily: "'Rajdhani'", fontSize: 11, color: T.textMuted, lineHeight: 1.5 }}>
               <span style={{ color: "#fff" }}>Whale exit:</span> because exits are AMM swaps, a large holder selling moves the price down the curve and pays slippage proportional to their size relative to pool depth. No single participant can drain a treasury or jump a redemption queue; the pool simply reprices. This is the core safety property of removing redemption.
@@ -394,21 +397,21 @@ function TokenomicsPanel() {
             <span style={{ color: "#fff" }}>{TOKENOMICS.poolFeePct}% per swap</span>
           </div>
           <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <span style={{ color: T.textMuted }}>LP share</span>
-            <span style={{ color: T.blue }}>{TOKENOMICS.lpSharePct}% of fee</span>
+            <span style={{ color: T.textMuted }}>Retained by Moonball POL</span>
+            <span style={{ color: T.blue }}>{TOKENOMICS.polRetainedFeePct}% of fee</span>
           </div>
           <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <span style={{ color: T.textMuted }}>Protocol skim → treasury</span>
-            <span style={{ color: T.gold }}>{TOKENOMICS.protocolSkimPct}% of fee</span>
+            <span style={{ color: T.textMuted }}>Moonball POL allocation → treasury</span>
+            <span style={{ color: T.gold }}>{TOKENOMICS.protocolPolFeeSharePct}% of fee</span>
           </div>
           <div style={{ borderTop: `1px dashed ${T.border}`, marginTop: 4, paddingTop: 6 }}>
             <div style={{ display: "flex", justifyContent: "space-between" }}>
               <span style={{ color: T.textMuted }}>→ POL reinvestment</span>
-              <span style={{ color: T.gold }}>{TOKENOMICS.treasuryPolSplit}% of skim</span>
+              <span style={{ color: T.gold }}>{TOKENOMICS.treasuryPolSplit}% treasury policy</span>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between" }}>
               <span style={{ color: T.textMuted }}>→ Operations</span>
-              <span style={{ color: T.blue }}>{TOKENOMICS.treasuryOpsSplit}% of skim</span>
+              <span style={{ color: T.blue }}>{TOKENOMICS.treasuryOpsSplit}% treasury policy</span>
             </div>
           </div>
         </div>
@@ -426,7 +429,7 @@ function TokenomicsPanel() {
             </div>
           ))}
           <div style={{ fontFamily: "'Rajdhani'", fontSize: 10, color: T.textMuted, lineHeight: 1.4, marginTop: 4 }}>
-            Fee tier steps down as pool depth grows. Deeper pool → lower fee → more volume → more POL.
+            Launch is 1%. A lower fee requires a separate governance-approved migration or configuration; TVL does not change it automatically.
           </div>
         </div>
       </div>
@@ -510,17 +513,17 @@ function PoolCalculator({ oracle }: { oracle?: OracleModel }) {
         </div>
       </div>
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, padding: "8px 10px", background: "rgba(0,0,0,0.3)", borderRadius: 8 }}>
-        <span style={{ fontFamily: "'Rajdhani'", fontSize: 11, color: T.textMuted }}>Launch price anchor</span>
+        <span style={{ fontFamily: "'Rajdhani'", fontSize: 11, color: T.textMuted }}>Oracle reference scenario</span>
         <span style={{ fontFamily: "'Share Tech Mono', monospace", fontSize: 12, color: T.gold }}>
           {launchPrice ? formatUsd(launchPrice) + " / MOON" : "—  (oracle loading)"}
         </span>
       </div>
       <div style={{ fontFamily: "'Rajdhani'", fontSize: 10, color: T.textMuted, marginBottom: 12, lineHeight: 1.4 }}>
-        Launch price = oracle's risk-adjusted value for the current jackpot. Sets MOON/USDC seed ratio.
+        Nonbinding scenario only. The Safe separately approves the actual initial pool price and seed ratio; the oracle does not initialize or control the AMM.
       </div>
       {result ? (
         <div style={{ background: `${T.gold}08`, border: `1px solid ${T.gold}33`, borderRadius: 10, padding: "12px 14px" }}>
-          <div style={{ fontFamily: "'Nunito Sans'", fontSize: 10, color: T.gold, fontWeight: 700, letterSpacing: 1, marginBottom: 10 }}>RECOMMENDED SEED</div>
+          <div style={{ fontFamily: "'Nunito Sans'", fontSize: 10, color: T.gold, fontWeight: 700, letterSpacing: 1, marginBottom: 10 }}>REFERENCE-PRICE SCENARIO</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 10 }}>
             {[
               { label: "MOON to seed", value: result.moonNeeded >= 1_000_000 ? `${(result.moonNeeded / 1_000_000).toFixed(2)}M` : `${Math.round(result.moonNeeded).toLocaleString()}`, testid: "result-moon-seed" },
@@ -538,7 +541,7 @@ function PoolCalculator({ oracle }: { oracle?: OracleModel }) {
             Seed {result.moonNeeded >= 1_000_000 ? `${(result.moonNeeded / 1_000_000).toFixed(2)}M` : Math.round(result.moonNeeded).toLocaleString()} MOON
             {" + "}
             {result.usdcNeeded >= 1_000_000 ? `$${(result.usdcNeeded / 1_000_000).toFixed(2)}M` : `$${Math.round(result.usdcNeeded).toLocaleString()}`} USDC
-            {" → launch price "}
+            {" → scenario price "}
             <span style={{ color: T.gold }}>{formatUsd(launchPrice!)}</span>
           </div>
           <div style={{ fontFamily: "'Rajdhani'", fontSize: 10, color: T.textMuted, marginTop: 8, lineHeight: 1.4, textAlign: "center" }}>

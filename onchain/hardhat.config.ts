@@ -1,6 +1,7 @@
 import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-ethers";
 import "@nomicfoundation/hardhat-chai-matchers";
+import "@nomicfoundation/hardhat-verify";
 import * as dotenv from "dotenv";
 
 dotenv.config();
@@ -13,6 +14,7 @@ const accounts = DEPLOYER_KEY ? [DEPLOYER_KEY] : [];
 const BASE_RPC = process.env.BASE_RPC_URL || process.env.RPC_URL || "";
 const BASE_SEPOLIA_RPC =
   process.env.BASE_SEPOLIA_RPC_URL || process.env.RPC_URL || "https://sepolia.base.org";
+const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY || "";
 
 const config: HardhatUserConfig = {
   solidity: {
@@ -43,6 +45,29 @@ const config: HardhatUserConfig = {
       chainId: 84532,
       accounts,
     },
+  },
+  // Blockscout publishes source without a key. Sourcify publication uses its
+  // v2 API in scripts/verify-sources.ts because the v1 API used by Hardhat
+  // Verify 2.x was retired. Etherscan/BaseScan remains optional.
+  etherscan: {
+    enabled: ETHERSCAN_API_KEY.length > 0,
+    apiKey: ETHERSCAN_API_KEY,
+  },
+  sourcify: {
+    enabled: false,
+  },
+  blockscout: {
+    enabled: true,
+    customChains: [
+      {
+        network: "baseSepolia",
+        chainId: 84532,
+        urls: {
+          apiURL: "https://base-sepolia.blockscout.com/api",
+          browserURL: "https://base-sepolia.blockscout.com",
+        },
+      },
+    ],
   },
 };
 
