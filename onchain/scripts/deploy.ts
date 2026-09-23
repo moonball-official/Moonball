@@ -15,7 +15,7 @@
  *   UPDATER_ADDRESS    — oracle updater / bridge keeper (public: required)
  *   ORACLE_STALENESS   — seconds before oracle data is stale (default: 14400 = 4h)
  *   SUPPLY_RECIPIENT   — receives all 100M MOON (public: required; Base: the Safe)
- *   SAFE_ADDRESS       — 2-of-3 Safe (required on Base; optional on testnet/local)
+ *   SAFE_ADDRESS       — 2-of-3 Safe on Base; 1-of-3 or 2-of-3 on Base Sepolia
  *   SEED_JACKPOT_M     — optional localhost/Hardhat-only seed; deployer must be the updater
  *   USDC_ADDRESS       — DEX quote token (public: required and verified for Base)
  *
@@ -25,7 +25,7 @@ import { ethers, network } from "hardhat";
 import * as fs from "fs";
 import * as path from "path";
 import {
-  assertTwoOfThreeSafeShape,
+  assertSafeShapeForNetwork,
   resolveDeploymentConfig,
 } from "./deploy-config";
 import { writeDeploymentRecord } from "./deployment-record";
@@ -54,7 +54,7 @@ async function retryRpcRead<T>(label: string, read: () => Promise<T>): Promise<T
   throw new Error(`${label} failed after ${RPC_READ_ATTEMPTS} attempts: ${message}`);
 }
 
-async function verifyTwoOfThreeSafe(safeAddress: string): Promise<void> {
+async function verifySafe(safeAddress: string): Promise<"1-of-3" | "2-of-3"> {
   const code = await ethers.provider.getCode(safeAddress);
   if (code === "0x") {
     throw new Error("SAFE_ADDRESS must contain deployed contract code.");
@@ -66,7 +66,7 @@ async function verifyTwoOfThreeSafe(safeAddress: string): Promise<void> {
       safe.getThreshold(),
       safe.getOwners(),
     ]);
-    assertTwoOfThreeSafeShape(threshold, owners);
+    return assertSafeShapeForNetwork(network.name, threshold, owners);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     throw new Error(`SAFE_ADDRESS validation failed: ${message}`);
@@ -107,8 +107,11 @@ async function main() {
   const { updater, staleness, recipient, safe, seedJackpotM } = config;
 
   if (!config.isLocal && safe) {
-    await verifyTwoOfThreeSafe(safe);
-    console.log(`Safe:      ${safe}  (verified 2-of-3)`);
+    const safeShape = await verifySafe(safe);
+    console.log(`Safe:      ${safe}  (verified ${safeShape})`);
+    if (safeShape === "1-of-3") {
+      console.warn("Warning: 1-of-3 is accepted for Base Sepolia rehearsal only; any single owner can act alone. Base mainnet requires 2-of-3.");
+    }
   }
 
   // DEX pair quote token (for the eventual MOON/USDC pool). Not wired into the

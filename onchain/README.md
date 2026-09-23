@@ -20,9 +20,10 @@ config, and test/scripts and does **not** touch the running dashboard
 (Express/React/Postgres). The dashboard is the off-chain data source; the
 `bridge` script is the only link between the two.
 
-> ⚠️ There is no current supported deployment and the contracts are not audited.
-> The recorded 2026-06-08 Base Sepolia addresses are explicitly deprecated. See
-> **Production gaps**.
+> ⚠️ There is no production deployment and the contracts are not audited. The
+> addresses in `deployments/baseSepolia.json` are a Base Sepolia `candidate`
+> only. The obsolete 2026-06-08 addresses are archived under
+> `deployments/history/` and remain explicitly deprecated. See **Production gaps**.
 
 ## Contracts
 
@@ -30,6 +31,8 @@ config, and test/scripts and does **not** touch the running dashboard
 | --- | --- |
 | `MoonballToken.sol` | The MOON ERC-20. Exactly 100M MOON is hardcoded and minted once at deployment to a single recipient. No mint, redeem, peg, treasury, or admin — immutable and ownerless after deployment. |
 | `JackpotOracle.sol` | Stores sequenced, source-timestamped jackpot snapshots and exposes an informational reference value. Enforces replay, chronology, cash, $20M–$5B, and source-age guards. |
+| `MoonballPOLFeeSplitter.sol` | Safe-controlled recipients for fees collected from Moonball-owned POL positions. Cumulative accounting sends 12% to treasury and every remaining token unit to POL without adding a trader fee. |
+| `OfficialMarketRegistry.sol` | Safe-controlled source of truth for the canonical MOON/USDC Uniswap v3 pool. Registration must match the configured factory and does not create a pool or move liquidity. |
 | `interfaces/IJackpotOracle.sol` | Oracle interface. |
 | `mocks/MockUSDC.sol` | 6-decimal test USDC (open `mint`), usable as a DEX pair token in tests. Test only. |
 
@@ -53,6 +56,12 @@ config, and test/scripts and does **not** touch the running dashboard
   [`../docs/architecture/PHASE_2_ORACLE_HARDENING.md`](../docs/architecture/PHASE_2_ORACLE_HARDENING.md).
 - **Immutable token.** `MoonballToken` has no owner and no admin functions. What
   ships is what holders get — there is no pause, no fee switch, and no upgrade path.
+- **Bounded market infrastructure.** Phase 3 adds an official-market registry and
+  POL fee splitter controlled through two-step ownership. Neither contract can
+  trade, create a pool, access a position NFT, change token supply, or use the
+  oracle. Ownership renunciation is disabled so the Safe cannot accidentally
+  strand operational controls. See
+  [`../docs/architecture/PHASE_3_MARKET_INFRASTRUCTURE.md`](../docs/architecture/PHASE_3_MARKET_INFRASTRUCTURE.md).
 
 ## Token Supply & Allocation
 
@@ -205,7 +214,7 @@ the synced checkout.
 | `ORACLE_STALENESS` | deploy | Seconds before oracle data is stale (default 14400) |
 | `SUPPLY_RECIPIENT` | deploy | Address receiving the hardcoded 100M supply; required publicly and must be the Safe on Base mainnet |
 | `SEED_JACKPOT_M` | deploy | Optional `localhost`/Hardhat-only seed; requires deployer to be updater, otherwise use the bridge |
-| `SAFE_ADDRESS` | deploy, transfer-ownership | Moonball 2-of-3 Safe; required and contract-validated on Base mainnet |
+| `SAFE_ADDRESS` | deploy, transfer-ownership | Base Sepolia rehearsal accepts 1-of-3 or 2-of-3; Base mainnet requires a contract-validated 2-of-3 Safe |
 
 Public-network seed values are prohibited. Before a Base Sepolia transaction,
 run `npm run preflight -- --network baseSepolia`; afterward, run
@@ -222,6 +231,14 @@ Node major version before any signing operation.
 After explicit approval, `npm.cmd run deploy:base-sepolia:interactive -- -Approved`
 runs signer preflight, the Base Sepolia candidate deployment, and read-only
 post-deployment verification through one hidden, transient-key prompt.
+
+Phase 3 market infrastructure has a separate, Base Sepolia-only preparation
+workflow. `npm.cmd run market:base-sepolia:preflight` is read-only and checks the
+approved Safe, treasury/POL destinations, current core candidate, and canonical
+Uniswap v3 factory. The splitter and registry are not deployed or connected to
+a pool. See
+[`../docs/deployment/BASE_SEPOLIA_MARKET_INFRASTRUCTURE.md`](../docs/deployment/BASE_SEPOLIA_MARKET_INFRASTRUCTURE.md)
+for the exact addresses and remaining approval gates.
 
 ## Test coverage
 
@@ -257,12 +274,13 @@ results. The suite covers:
    against historical Powerball data and add per-update deviation limits.
 5. **ERC-20 completeness.** Consider EIP-2612 `permit`, and confirm the minimal
    ERC-20 implementation against the exact integrations (DEXs, bridges) you target.
-6. **DEX/POL design.** Launch one continuing official MOON/USDC market at the 1%
-   Uniswap v3 tier. The 2-of-3 Safe must own the POL NFT. Build and audit fee
-   collection that sends 12% of fees collected from Moonball POL positions to
-   the protocol treasury and retains 88% with POL, without adding a trader
-   surcharge. Pool initialization and any later fee-tier migration require an
-   explicit Safe/governance decision and must not be controlled by the oracle.
+6. **DEX/POL deployment and audit.** Phase 3 implements the official-market
+   registry and cumulative 12/88 POL fee splitter in source, with unit tests.
+   They remain unaudited and undeployed. Production still requires a reviewed
+   collection workflow, canonical Uniswap v3 integration rehearsal, a 2-of-3
+   Safe that owns the POL NFT and both contracts, and explicit Safe approval of
+   pool initialization and any later fee-tier migration. The oracle must never
+   control those actions.
 7. **Operational hardening of the bridge.** Bounded retries and fail-closed
    one-shot exits are implemented. Add alerting, redundant RPCs, nonce management,
    gas strategy, and service monitoring; run it as a managed service.

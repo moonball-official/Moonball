@@ -20,7 +20,11 @@
     "node": "hardhat node",
     "bridge": "hardhat run scripts/bridge.ts",
     "bridge:base-sepolia:preflight": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/bridge-base-sepolia-preflight.ps1",
-    "bridge:base-sepolia:interactive": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/publish-base-sepolia-snapshot-with-key.ps1"
+    "bridge:base-sepolia:interactive": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/publish-base-sepolia-snapshot-with-key.ps1",
+    "market:base-sepolia:preflight": "hardhat run scripts/market-preflight.ts --network baseSepolia",
+    "market:base-sepolia:deploy": "hardhat run scripts/market-deploy.ts --network baseSepolia",
+    "market:base-sepolia:verify": "hardhat run scripts/market-verify.ts --network baseSepolia",
+    "market:base-sepolia:interactive": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/deploy-market-base-sepolia-with-key.ps1"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-chai-matchers": "^2.0.7",
