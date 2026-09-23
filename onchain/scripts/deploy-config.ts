@@ -45,6 +45,28 @@ export function assertTwoOfThreeSafeShape(
       `SAFE_ADDRESS must be a 2-of-3 Safe; found threshold ${threshold.toString()} with ${owners.length} owners.`
     );
   }
+  assertDistinctSafeOwners(owners);
+}
+
+export function assertSafeShapeForNetwork(
+  networkName: string,
+  threshold: bigint,
+  owners: readonly string[]
+): "1-of-3" | "2-of-3" {
+  if (networkName === "baseSepolia") {
+    if (owners.length !== 3 || (threshold !== 1n && threshold !== 2n)) {
+      throw new Error(
+        `SAFE_ADDRESS must be a 1-of-3 or 2-of-3 Safe on Base Sepolia; found threshold ${threshold.toString()} with ${owners.length} owners.`
+      );
+    }
+    assertDistinctSafeOwners(owners);
+    return threshold === 1n ? "1-of-3" : "2-of-3";
+  }
+  assertTwoOfThreeSafeShape(threshold, owners);
+  return "2-of-3";
+}
+
+function assertDistinctSafeOwners(owners: readonly string[]): void {
   const normalizedOwners = owners.map((owner) => {
     if (!isAddress(owner) || getAddress(owner) === getAddress("0x0000000000000000000000000000000000000000")) {
       throw new Error("SAFE_ADDRESS returned an invalid or zero owner.");

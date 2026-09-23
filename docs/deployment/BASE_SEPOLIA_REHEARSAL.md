@@ -7,11 +7,22 @@
 - **Source verification:** Completed on 2026-09-15 UTC. Sourcify reports exact
   creation/runtime matches and Base Sepolia Blockscout reports full verification
   for both candidate contracts.
-- **Current gate:** Keep the deployment at status `candidate`. Deploy and review
-  the dashboard on Railway using `docs/deployment/RAILWAY.md`, then run the
-  no-key bridge preflight against its working HTTPS endpoint. Do not seed the
-  oracle, create a pool, add liquidity, deploy vesting, or use mainnet without
-  the corresponding approval gate.
+- **Safe rehearsal check (2026-09-21):** Read-only preflight confirmed deployed
+  Safe `0xB2cb3851d8055bA6aA8Cf7E548c1211D475e0d29` has three distinct
+  owners and threshold one on Base Sepolia. The testnet-only validation now
+  accepts that 1-of-3 shape; Base mainnet remains 2-of-3. This does not transfer
+  ownership of the already-deployed oracle or any token allocation.
+- **Current gate:** Keep the deployment at status `candidate`. The Railway
+  dashboard and canonical `www.moonball.info` source are live, one approved
+  oracle snapshot has been published, and a later no-key sequence-2 preview was
+  not published. Phase 3 market contracts are source-only and undeployed. Do not
+  create a pool, add liquidity, deploy market infrastructure or vesting, publish
+  another oracle snapshot, or use mainnet without the corresponding approval
+  gate.
+
+The separate Phase 3 market-infrastructure preparation and pinned recipient
+addresses are documented in
+[`BASE_SEPOLIA_MARKET_INFRASTRUCTURE.md`](BASE_SEPOLIA_MARKET_INFRASTRUCTURE.md).
 
 Keep all private keys local. Do not paste them into chat, documentation, source
 control, deployment records, or command output. Git ignore does not prevent
@@ -32,8 +43,10 @@ USDC_ADDRESS=0x036CbD53842c5426634e7929541eC2318f3dCF7e
 ORACLE_STALENESS=14400
 ```
 
-Use a dedicated updater account. A 2-of-3 Safe is recommended for rehearsal and
-is required for mainnet. Do not set `SEED_JACKPOT_M`; public networks reject it.
+Use a dedicated updater account. The Base Sepolia rehearsal accepts a 1-of-3 or
+2-of-3 Safe; 1-of-3 is single-approval authority, not production multisig
+protection. Base mainnet still requires 2-of-3. Do not set `SEED_JACKPOT_M`;
+public networks reject it.
 
 ## 2. Verify the source tree
 
