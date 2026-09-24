@@ -1,5 +1,8 @@
 import { T } from "@/lib/constants";
 
+const formatMillions = (value: number) =>
+  `$${value.toLocaleString("en-US", { maximumFractionDigits: 1 })}M`;
+
 export function MultiCycleChart({ cycles, activeCycleId, onSelectCycle }: any) {
   const W = 340;
   const H = 180;
@@ -8,9 +11,10 @@ export function MultiCycleChart({ cycles, activeCycleId, onSelectCycle }: any) {
   const chartH = H - PAD.top - PAD.bottom;
 
   const allJackpots = cycles.flatMap((c: any) => c.draws.map((d: any) => d.jackpot));
-  const globalMax = Math.max(...allJackpots);
+  const globalMax = Math.max(20, ...allJackpots);
   const globalMin = 0;
-  const range = globalMax - globalMin || 1;
+  const axisMax = Math.max(100, Math.ceil(globalMax / 500) * 500);
+  const range = axisMax - globalMin;
 
   const totalDraws = cycles.reduce((sum: number, c: any) => sum + c.draws.length, 0);
   const gapDraws = 1.5;
@@ -31,7 +35,7 @@ export function MultiCycleChart({ cycles, activeCycleId, onSelectCycle }: any) {
 
   });
 
-  const yTicks = [0, 200, 400, 600];
+  const yTicks = Array.from({ length: 5 }, (_, i) => (axisMax / 4) * i);
   const toY = (v: number) => PAD.top + chartH - ((v - globalMin) / range) * chartH;
 
   return (
@@ -83,7 +87,7 @@ export function MultiCycleChart({ cycles, activeCycleId, onSelectCycle }: any) {
                 textAnchor="end"
                 fontFamily="'Nunito Sans'"
               >
-                {v > 0 ? `$${v}M` : "$0"}
+                {v > 0 ? formatMillions(v) : "$0"}
               </text>
             </g>
           );
@@ -102,7 +106,7 @@ export function MultiCycleChart({ cycles, activeCycleId, onSelectCycle }: any) {
           const isActive = seg.id === activeCycleId;
           const pts = seg.points;
           if (pts.length < 2) {
-            if (pts.length === 1 && seg.isCurrentCycle) {
+            if (pts.length === 1) {
               return (
                 <g
                   key={seg.id}
@@ -134,7 +138,7 @@ export function MultiCycleChart({ cycles, activeCycleId, onSelectCycle }: any) {
                     fontFamily="'Nunito Sans'"
                     opacity={isActive ? 1 : 0.4}
                   >
-                    NOW
+                    {seg.isCurrentCycle ? "NOW" : `C${seg.cycleIndex + 1}`}
                   </text>
                 </g>
               );
@@ -190,7 +194,7 @@ export function MultiCycleChart({ cycles, activeCycleId, onSelectCycle }: any) {
                 fontFamily="'Nunito Sans'"
                 opacity={isActive ? 1 : 0.4}
               >
-                {seg.isCurrentCycle ? "NOW" : `C${seg.id}`}
+                {seg.isCurrentCycle ? "NOW" : `C${seg.cycleIndex + 1}`}
               </text>
 
               {(() => {
@@ -218,7 +222,7 @@ export function MultiCycleChart({ cycles, activeCycleId, onSelectCycle }: any) {
                         textAnchor="middle"
                         fontFamily="'Nunito Sans'"
                       >
-                        ${peakPt.jackpot}M
+                        {formatMillions(peakPt.jackpot)}
                       </text>
                     )}
                     {seg.winner && isActive && (
@@ -311,8 +315,8 @@ export function MultiCycleChart({ cycles, activeCycleId, onSelectCycle }: any) {
                 }}
               >
                 {seg.winner
-                  ? `${seg.label} · $${seg.peak}M 🏆`
-                  : `${seg.label} · $${peakVal}M ↑`}
+                  ? `${seg.label} · ${formatMillions(seg.peak)} 🏆`
+                  : `${seg.label} · ${formatMillions(peakVal)} ↑`}
               </span>
             </button>
           );
@@ -337,7 +341,7 @@ export function MultiCycleChart({ cycles, activeCycleId, onSelectCycle }: any) {
             }}
           >
             {[
-              { label: "PEAK", value: sel.peak ? `$${sel.peak}M` : `$${Math.max(...sel.draws.map((d: any) => d.jackpot))}M+` },
+              { label: "PEAK", value: sel.peak ? formatMillions(sel.peak) : `${formatMillions(Math.max(...sel.draws.map((d: any) => d.jackpot)))}+` },
               { label: "DRAWS", value: `${drawCount}` },
               {
                 label: "STATUS",

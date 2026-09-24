@@ -1,4 +1,5 @@
-import { useLocation } from "wouter";
+import { SiteFooter, SiteHeader } from "@/components/SiteChrome";
+import "./inner-pages.css";
 import { T, MOON_V2, formatUsd, formatPct } from "@/lib/constants";
 import {
   ACTIVE_CHAIN,
@@ -14,120 +15,40 @@ function short(addr: string) {
 }
 
 export default function Protocol() {
-  const [, navigate] = useLocation();
   const wallet = useWallet();
   const { data: live, isLoading } = useLivePowerball();
   const oracle = live?.oracle;
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        maxWidth: 430,
-        margin: "0 auto",
-        background: T.bg,
-        color: T.textPrimary,
-        fontFamily: "'Rajdhani', sans-serif",
-        paddingBottom: 100,
-      }}
-    >
-      {/* Header */}
-      <header
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "20px 18px 14px",
-          borderBottom: `1px solid ${T.border}`,
-        }}
-      >
-        <a
-          href="/"
-          onClick={(e) => { e.preventDefault(); navigate("/"); }}
-          data-testid="button-back-home"
-          style={{
-            background: "transparent",
-            border: `1px solid ${T.border}`,
-            borderRadius: 8,
-            color: T.textSecondary,
-            padding: "6px 10px",
-            cursor: "pointer",
-            fontSize: 12,
-            fontFamily: "'Rajdhani', sans-serif",
-            textDecoration: "none",
-            display: "inline-block",
-          }}
-        >
-          ← Home
-        </a>
-        <div style={{ textAlign: "right" }}>
-          <h1
-            style={{
-              fontFamily: "'Montserrat'",
-              fontSize: 16,
-              fontWeight: 700,
-              color: T.gold,
-              letterSpacing: 1.5,
-              margin: 0,
-            }}
-            data-testid="text-protocol-title"
-          >
-            MOONBALL PROTOCOL
-          </h1>
-          <div style={{ fontSize: 10, color: T.textMuted, letterSpacing: 1, fontFamily: "'Rajdhani', sans-serif" }}>
-            {ACTIVE_CHAIN.name} · DEX market
-          </div>
-        </div>
-      </header>
-
-      <main style={{ padding: "16px 18px" }}>
-        {!IS_DEPLOYED && (
-          <Banner color="#F5A623">
-            Contracts are not deployed on {ACTIVE_CHAIN.name} yet. You can preview the oracle
-            reference below, but trading is unavailable until the MOON contract goes live.
-          </Banner>
-        )}
-
-        {IS_DEPLOYED && !MOON_V2.marketLive && (
-          <Banner color="#F5A623">
-            Market pre-launch: the {MOON_V2.poolPair} pool on {MOON_V2.dexName} is not live yet.
-            The figures below are oracle reference values, not tradable prices.
-          </Banner>
-        )}
-
-        {/* Trade on a DEX */}
-        <TradePanel wallet={wallet} oracle={oracle} />
-
-        {/* Oracle reference (read-only) */}
-        <div style={{ marginTop: 16 }}>
-          <ReferencePanel oracle={oracle} jackpotM={live?.estimated} loading={isLoading} />
+    <div className="moon-site moon-protocol">
+      <SiteHeader active="protocol" />
+      <main id="main" className="moon-inner-main">
+        <div className="moon-inner-intro">
+          <p className="moon-eyebrow"><span className="moon-status-dot" /> PROTOCOL PREVIEW</p>
+          <h1 data-testid="text-protocol-title">How MOON works<span className="moon-brand-dot">.</span></h1>
+          <p>See the market setup and the current oracle reference. A reference value is information, not a price guarantee.</p>
         </div>
 
-        {/* Contract footer */}
-        <p style={{ fontSize: 11, color: T.textMuted, marginTop: 16, lineHeight: 1.6, fontFamily: "'Rajdhani', sans-serif" }}>
-          MOON trades freely on {MOON_V2.dexName} ({MOON_V2.poolPair}). The oracle publishes a
-          reference value from public jackpot data — it is not a peg, and the protocol never redeems
-          or defends a price. Testnet only — not financial advice.
-          {IS_DEPLOYED && (
-            <>
-              {" "}Contract{" "}
-              {ADDRESSES.moon && explorerAddress(ADDRESSES.moon) ? (
-                <a
-                  href={explorerAddress(ADDRESSES.moon)}
-                  target="_blank"
-                  rel="noreferrer"
-                  style={{ color: T.textSecondary }}
-                >
-                  {short(ADDRESSES.moon)}
-                </a>
-              ) : (
-                short(ADDRESSES.moon)
-              )}
-              .
-            </>
+        <div className="moon-protocol-panels">
+          {!IS_DEPLOYED && (
+            <div className="moon-protocol-notice"><Banner color="#F5A623">
+              Contracts are not deployed on {ACTIVE_CHAIN.name} yet. You can preview the oracle reference below, but trading is unavailable until the MOON contract goes live.
+            </Banner></div>
           )}
+          {IS_DEPLOYED && !MOON_V2.marketLive && (
+            <div className="moon-protocol-notice"><Banner color="#F5A623">
+              Market pre-launch: the {MOON_V2.poolPair} pool on {MOON_V2.dexName} is not live yet. The figures below are oracle reference values, not tradable prices.
+            </Banner></div>
+          )}
+          <div className="moon-protocol-panel"><TradePanel wallet={wallet} oracle={oracle} /></div>
+          <div className="moon-protocol-panel"><ReferencePanel oracle={oracle} jackpotM={live?.estimated} verificationStatus={live?.verificationStatus} loading={isLoading} /></div>
+        </div>
+        <p className="moon-protocol-disclosure">
+          MOON trades freely on {MOON_V2.dexName} ({MOON_V2.poolPair}). The oracle publishes a reference value from public jackpot data; it is not a peg, and the protocol never redeems or defends a price. Testnet only. This is not financial advice.
+          {IS_DEPLOYED && <> Contract {ADDRESSES.moon && explorerAddress(ADDRESSES.moon) ? <a href={explorerAddress(ADDRESSES.moon)} target="_blank" rel="noreferrer">{short(ADDRESSES.moon)}</a> : short(ADDRESSES.moon)}.</>}
         </p>
       </main>
+      <SiteFooter />
     </div>
   );
 }
@@ -260,18 +181,16 @@ function WalletBar({ wallet }: { wallet: ReturnType<typeof useWallet> }) {
 function ReferencePanel({
   oracle,
   jackpotM,
+  verificationStatus,
   loading,
 }: {
   oracle?: OracleModel;
   jackpotM?: number;
+  verificationStatus?: "verified" | "unconfirmed";
   loading: boolean;
 }) {
-  const confColor =
-    oracle?.confidence === "High"
-      ? "#34D399"
-      : oracle?.confidence === "Medium"
-        ? T.gold
-        : "#EF4444";
+  const isVerified = verificationStatus === "verified";
+  const statusColor = isVerified ? "#34D399" : T.gold;
 
   const stats: { label: string; value: string; testid: string; color?: string }[] = oracle
     ? [
@@ -283,11 +202,6 @@ function ReferencePanel({
           value: formatPct(oracle.resetRisk),
           testid: "stat-reset-risk",
           color: oracle.resetRisk >= 0.5 ? "#EF4444" : oracle.resetRisk >= 0.25 ? T.gold : "#34D399",
-        },
-        {
-          label: "Consensus",
-          value: `${oracle.consensusCount}/${oracle.totalSources}`,
-          testid: "stat-consensus",
         },
       ]
     : [];
@@ -301,26 +215,29 @@ function ReferencePanel({
         padding: 16,
       }}
     >
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-        <h2 style={{ fontFamily: "'Montserrat'", fontSize: 11, fontWeight: 700, color: T.textSecondary, letterSpacing: 1.5, margin: 0 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
+        <h2 style={{ fontFamily: "'Montserrat'", fontSize: 11, fontWeight: 700, color: T.textSecondary, letterSpacing: 1.5, margin: 0, whiteSpace: "nowrap" }}>
           ORACLE REFERENCE
         </h2>
         {oracle && (
           <span
-            data-testid="badge-confidence"
+            data-testid="badge-source-agreement"
             style={{
               fontSize: 11,
               fontWeight: 700,
               padding: "3px 10px",
               borderRadius: 20,
-              color: confColor,
-              border: `1px solid ${confColor}`,
-              background: `${confColor}1A`,
+              color: statusColor,
+              border: `1px solid ${statusColor}`,
+              background: `${statusColor}1A`,
               fontFamily: "'Nunito Sans'",
               letterSpacing: 0.5,
+              whiteSpace: "nowrap",
             }}
           >
-            {oracle.confidence} confidence
+            {isVerified
+              ? `Verified · ${oracle.consensusCount} of ${oracle.totalSources} sources agree`
+              : "Unconfirmed · awaiting source agreement"}
           </span>
         )}
       </div>

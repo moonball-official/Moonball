@@ -1,0 +1,454 @@
+.moon-site .moon-nav a[aria-current="page"] {
+  color: var(--moon-gold);
+}
+
+.moon-inner-main {
+  width: min(1120px, calc(100% - 80px));
+  margin: 0 auto;
+  padding: 62px 0 110px;
+  min-height: 58vh;
+}
+
+.moon-inner-intro {
+  max-width: 780px;
+  margin-bottom: 46px;
+}
+
+.moon-inner-intro .moon-eyebrow {
+  margin: 0 0 17px;
+}
+
+.moon-site .moon-inner-intro h1,
+.moon-site .moon-dashboard-loading h1 {
+  font-family: "Nunito Sans", sans-serif;
+  font-size: clamp(42px, 5vw, 64px);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -2.6px;
+  margin: 0 0 18px;
+}
+
+.moon-inner-intro > p:last-child,
+.moon-inner-intro > div > p:last-child,
+.moon-dashboard-loading > p[role="status"] {
+  color: #b7bdc8;
+  font-size: 18px;
+  line-height: 1.65;
+  margin: 0;
+  max-width: 680px;
+}
+
+.moon-dashboard-loading .moon-button {
+  margin-top: 24px;
+}
+
+.moon-dashboard-main {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 22px;
+  row-gap: 22px;
+  align-items: start;
+}
+
+.moon-dashboard-main > * {
+  min-width: 0;
+}
+
+.moon-dashboard-intro {
+  grid-column: 1 / -1;
+  max-width: none;
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 36px;
+  border-bottom: 1px solid #ffffff18;
+  padding-bottom: 42px;
+  margin-bottom: 8px;
+}
+
+.moon-dashboard-intro > div:first-child {
+  max-width: 650px;
+}
+
+.moon-dashboard-highlight {
+  flex: 0 0 310px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 23px 25px;
+  border: 1px solid #ffffff24;
+  border-radius: 13px;
+  background: #1b2029;
+}
+
+.moon-dashboard-highlight > span {
+  color: #b7bdc8;
+  font-size: 13px;
+}
+
+.moon-dashboard-highlight strong {
+  color: #f5f2ec;
+  font-size: 48px;
+  line-height: 1.25;
+  letter-spacing: -2px;
+}
+
+.moon-dashboard-highlight small {
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.moon-dashboard-main > .rounded-xl,
+.moon-dashboard-main > div > .rounded-xl,
+.moon-protocol-panel > div {
+  background: #1b2029 !important;
+  border: 1px solid #ffffff22 !important;
+  border-radius: 13px !important;
+  box-shadow: none !important;
+  animation: none !important;
+  margin: 0 !important;
+  padding: 23px !important;
+}
+
+.moon-dashboard-main > div > .rounded-xl,
+.moon-dashboard-main > .rounded-xl {
+  width: 100%;
+}
+
+.moon-dashboard-main :is(h2, h3),
+.moon-protocol-panel h2 {
+  font-family: "Nunito Sans", sans-serif !important;
+}
+
+.moon-dashboard-main :is(h2, h3) > span:last-child {
+  font-size: 14px !important;
+  letter-spacing: .06em !important;
+}
+
+.moon-dashboard-main h2 {
+  font-size: 16px !important;
+  line-height: 1.4 !important;
+}
+
+.moon-dashboard-main [style*="font-size: 8px"],
+.moon-dashboard-main [style*="font-size: 9px"],
+.moon-dashboard-main [style*="font-size: 10px"] {
+  font-size: 11px !important;
+}
+
+.moon-dashboard-main [style*="font-size: 11px"],
+.moon-dashboard-main [style*="font-size: 12px"] {
+  font-size: 12px !important;
+}
+
+.moon-dashboard-main [style*="Rajdhani"],
+.moon-dashboard-main [style*="Bebas Neue"] {
+  font-family: "Nunito Sans", sans-serif !important;
+}
+
+.moon-dashboard-main [style*="Bebas Neue"] {
+  font-weight: 800 !important;
+  letter-spacing: -.02em !important;
+}
+
+.moon-dashboard-main [style*="color: rgb(58, 69, 96)"],
+.moon-protocol-panel [style*="color: rgb(58, 69, 96)"],
+.moon-document [style*="color: rgb(58, 69, 96)"] {
+  color: #aeb6c5 !important;
+}
+
+.moon-dashboard-main [style*="color: rgb(107, 122, 148)"],
+.moon-protocol-panel [style*="color: rgb(107, 122, 148)"],
+.moon-document [style*="color: rgb(107, 122, 148)"] {
+  color: #c4c9d2 !important;
+}
+
+.moon-dashboard-main [data-testid="text-market-price"] {
+  font-size: 27px !important;
+  letter-spacing: -.03em !important;
+  font-weight: 800 !important;
+}
+
+.moon-history-source {
+  color: #aeb6c5;
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 18px 0 0;
+}
+
+.moon-history-source a {
+  color: var(--moon-gold);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.moon-dashboard-main [data-testid="button-toggle-cycles"] {
+  color: var(--moon-gold) !important;
+  background: #f4bc510c !important;
+  border-color: #f4bc5144 !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  padding: 10px 12px !important;
+  margin-bottom: 8px !important;
+}
+
+.moon-protocol-panels {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px;
+  align-items: start;
+}
+
+.moon-protocol-notice {
+  grid-column: 1 / -1;
+}
+
+.moon-protocol-notice > div {
+  font-family: "Nunito Sans", sans-serif !important;
+  font-size: 14px !important;
+  line-height: 1.6;
+  padding: 18px 20px !important;
+  margin: 0 !important;
+  border-color: #f4bc5180 !important;
+  background: #f4bc5110 !important;
+  color: #f6cc79 !important;
+}
+
+.moon-protocol-panel > div {
+  min-height: 100%;
+}
+
+.moon-protocol-panel h2 {
+  font-size: 16px !important;
+  color: #f4bc51 !important;
+  letter-spacing: .06em !important;
+  margin-bottom: 22px !important;
+}
+
+.moon-protocol-panel [style*="font-size: 10px"],
+.moon-protocol-panel [style*="font-size: 11px"],
+.moon-protocol-panel [style*="font-size: 12px"] {
+  font-size: 13px !important;
+}
+
+.moon-protocol-panel [style*="Rajdhani"],
+.moon-protocol-panel [style*="Bebas Neue"],
+.moon-protocol-panel [style*="Orbitron"] {
+  font-family: "Nunito Sans", sans-serif !important;
+}
+
+.moon-protocol-panel [data-testid^="row-"] {
+  font-size: 18px !important;
+  font-weight: 800 !important;
+}
+
+.moon-protocol-panel button {
+  border-radius: 7px !important;
+  letter-spacing: 0 !important;
+}
+
+.moon-protocol-disclosure {
+  max-width: 770px;
+  color: #9fa6b2;
+  font-size: 13px;
+  line-height: 1.7;
+  margin: 28px 0 0;
+}
+
+.moon-protocol-disclosure a {
+  color: var(--moon-gold);
+}
+
+.moon-paper .moon-inner-main {
+  max-width: 960px;
+}
+
+.moon-doc-toc {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin: -12px 0 30px;
+}
+
+.moon-doc-toc a {
+  padding: 9px 13px;
+  color: #c3c8d1;
+  background: #1c222b;
+  border: 1px solid #ffffff20;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.moon-doc-toc a:hover {
+  border-color: var(--moon-gold);
+}
+
+.moon-document {
+  padding: 40px 46px !important;
+  background: #171c25 !important;
+  border: 1px solid #ffffff1d !important;
+  box-shadow: none !important;
+  border-radius: 14px !important;
+}
+
+.moon-document > div:not(:first-child) {
+  margin-bottom: 34px !important;
+  scroll-margin-top: 110px;
+}
+
+.moon-document > div:not(:first-child):not(:last-child) {
+  padding-bottom: 32px;
+  border-bottom: 1px solid #ffffff14;
+}
+
+.moon-document h2 {
+  font-family: "Nunito Sans", sans-serif !important;
+  font-size: 21px !important;
+  font-weight: 800 !important;
+  text-transform: none !important;
+  letter-spacing: -.02em !important;
+  color: #f3f0e8 !important;
+  margin-bottom: 14px !important;
+}
+
+.moon-document p {
+  font-family: "Nunito Sans", sans-serif !important;
+  font-size: 15px !important;
+  line-height: 1.7 !important;
+  color: #b7bdc8 !important;
+  margin-bottom: 14px;
+}
+
+.moon-document [style*="Rajdhani"],
+.moon-document [style*="Bebas Neue"] {
+  font-family: "Nunito Sans", sans-serif !important;
+}
+
+.moon-document [style*="font-size: 9px"],
+.moon-document [style*="font-size: 10px"],
+.moon-document [style*="font-size: 11px"] {
+  font-size: 12px !important;
+}
+
+.moon-document [style*="font-size: 12px"] {
+  font-size: 14px !important;
+}
+
+.moon-document h2[style] {
+  font-size: 21px !important;
+}
+
+.moon-document p[style] {
+  font-size: 15px !important;
+}
+
+.moon-document .moon-security-copy {
+  color: #b7bdc8;
+  font-family: "Nunito Sans", sans-serif;
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.moon-protocol-panel h2[style] {
+  font-size: 16px !important;
+}
+
+.moon-document table {
+  min-width: 520px;
+  font-size: 12px !important;
+}
+
+.moon-document div:has(> table) {
+  overflow-x: auto !important;
+}
+
+.moon-document button,
+.moon-document input {
+  font-family: "Nunito Sans", sans-serif !important;
+}
+
+.moon-document #calculator input {
+  font-family: "Aptos", "Segoe UI", sans-serif !important;
+}
+
+#calculator,
+#allocation {
+  background: #1e242e !important;
+  border: 1px solid #ffffff1f !important;
+  border-radius: 10px !important;
+  padding: 24px !important;
+}
+
+@media (max-width: 1050px) {
+  .moon-dashboard-main {
+    grid-template-columns: 1fr;
+  }
+  .moon-dashboard-intro {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 760px) {
+  .moon-inner-main {
+    width: calc(100% - 40px);
+    padding: 42px 0 70px;
+  }
+  .moon-inner-intro {
+    margin-bottom: 30px;
+  }
+  .moon-site .moon-inner-intro h1,
+  .moon-site .moon-dashboard-loading h1 {
+    font-size: clamp(38px, 9vw, 52px);
+    letter-spacing: -2px;
+  }
+  .moon-inner-intro > p:last-child,
+  .moon-inner-intro > div > p:last-child {
+    font-size: 16px;
+  }
+  .moon-dashboard-intro {
+    flex-direction: column;
+    align-items: stretch;
+    padding-bottom: 27px;
+    gap: 26px;
+  }
+  .moon-dashboard-highlight {
+    flex: auto;
+  }
+  .moon-dashboard-main [data-testid="text-market-price"] {
+    font-size: 20px !important;
+    white-space: nowrap;
+  }
+  .moon-protocol-panels {
+    grid-template-columns: 1fr;
+  }
+  .moon-protocol-notice {
+    grid-column: auto;
+  }
+  .moon-protocol-panel div:has(> [data-testid^="row-"]) {
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .moon-protocol-panel [data-testid^="row-"] {
+    font-size: 16px !important;
+    text-align: right;
+  }
+  .moon-document {
+    padding: 22px !important;
+  }
+  .moon-document h2[style] {
+    font-size: 18px !important;
+  }
+  .moon-document p[style] {
+    font-size: 14px !important;
+  }
+  .moon-document .moon-security-copy {
+    font-size: 14px;
+  }
+  #calculator,
+  #allocation {
+    padding: 17px !important;
+  }
+}

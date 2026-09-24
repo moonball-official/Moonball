@@ -9,10 +9,9 @@ import {
   TECHNICAL_PAPER_INTRO,
 } from "@shared/page-descriptions";
 
-const BASE_URL = (process.env.PUBLIC_BASE_URL || "https://moonball.info").replace(
-  /\/+$/,
-  "",
-);
+const BASE_URL = (
+  process.env.PUBLIC_BASE_URL || "https://moonball.info"
+).replace(/\/+$/, "");
 const DEFAULT_IMAGE = `${BASE_URL}/moon-logo.png`;
 
 const STYLE = `
@@ -37,7 +36,8 @@ const CARD = `background:rgba(0,0,0,0.25);border:1px solid #1E293B;border-radius
 
 const INTERNAL_NAV = `
 <nav style="${NAV}">
-  <a href="/" style="${NAV_A}">🏠 Dashboard</a>
+  <a href="/" style="${NAV_A}">Home</a>
+  <a href="/dashboard" style="${NAV_A}">Dashboard</a>
   <a href="/protocol" style="${NAV_A}">⛓️ Protocol</a>
   <a href="/technical-paper" style="${NAV_A}">📄 Technical Paper</a>
 </nav>`;
@@ -58,370 +58,47 @@ const WEBSITE_GRAPH: object[] = [
   {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    "name": "Moonball Protocol",
-    "url": BASE_URL,
-    "description":
+    name: "Moonball Protocol",
+    url: BASE_URL,
+    description:
       "Live Powerball jackpot dashboard with multi-cycle charts, countdown timers, winning numbers, and phase indicators. Built on a sci-fi oracle event-market for MOON tokens on Base.",
   },
   {
     "@context": "https://schema.org",
     "@type": "Organization",
-    "name": "Moonball Labs",
-    "url": BASE_URL,
-    "logo": DEFAULT_IMAGE,
-    "description":
+    name: "Moonball Labs",
+    url: BASE_URL,
+    logo: DEFAULT_IMAGE,
+    description:
       "Moonball Labs builds the Moonball Protocol — a free-floating ERC-20 event-market token on Base with a transparent, risk-adjusted oracle reference derived from the Powerball jackpot.",
-    "email": "edgar@moonball.info",
-    "foundingDate": "2025-04",
-    "founder": [
-      {
-        "@type": "Person",
-        "name": "Edgar Ramirez",
-        "jobTitle": "Founder & CEO",
-      },
-      {
-        "@type": "Person",
-        "name": "Julio Valdes",
-        "jobTitle": "Founding Frontend Engineer",
-      },
-    ],
-    "sameAs": [],
+    email: "edgar@moonball.info",
+    foundingDate: "2025-04",
+    founder: {
+      "@type": "Person",
+      name: "Edgar Ramirez",
+      jobTitle: "Founder & CEO",
+    },
+    sameAs: [],
   },
 ];
 
 const ROUTE_META: Record<string, RouteMeta> = {
   "/": {
-    title: "Moonball Protocol | Track the Powerball Jackpot Live",
+    title: "Moonball — Follow the jackpot. Understand the market.",
     description:
-      "Live Powerball jackpot dashboard with multi-cycle charts, countdown timers, winning numbers, and phase indicators. Built on a sci-fi oracle event-market for MOON tokens on Base.",
-    canonical: `${BASE_URL}/`,
-    ogImage: `${BASE_URL}/social-card.png`,
-    ogImageAlt: "Moonball Protocol — Live Powerball jackpot dashboard with oracle reference and MOON token on Base",
-    structuredData: [
-      ...WEBSITE_GRAPH,
-      {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "Is MOON pegged to the jackpot?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. The oracle publishes a reference value derived from public jackpot data, but the price floats freely on the DEX. The market can trade above or below the reference at any time.",
-            },
-          },
-          {
-            "@type": "Question",
-            "name": "Is MOON backed by anything?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "MOON is not a redeemable claim on reserves. Its value comes from what traders will pay in the open market. The oracle reference is derived from public jackpot data — it is information, not a backing or buy-back promise.",
-            },
-          },
-          {
-            "@type": "Question",
-            "name": "Can I redeem MOON with the protocol?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. There is no mint or redeem. You buy and sell MOON with other traders in the liquidity pool.",
-            },
-          },
-          {
-            "@type": "Question",
-            "name": "What happens if a whale sells a large position?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Exits are DEX swaps, so a large sell moves the price down the pool's curve and pays slippage proportional to its size. No one can drain a treasury or jump a redemption queue — the pool simply reprices.",
-            },
-          },
-          {
-            "@type": "Question",
-            "name": "What happens when someone wins the jackpot?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "The jackpot resets to its base, the oracle reference drops accordingly, and a new cycle begins. The market reprices on its own.",
-            },
-          },
-          {
-            "@type": "Question",
-            "name": "Does the treasury protect the price?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. V1 has no automatic, mandatory, or price-defense buyback and the treasury does not guarantee a price. Any future discretionary treasury action would require separate governance, legal, regulatory, and treasury review.",
-            },
-          },
-        ],
-      },
-    ],
-    bodyHtml: `
-<div style="${STYLE}">
-  <header style="border-bottom:1px solid #1E293B;padding-bottom:16px;margin-bottom:4px;">
-    <h1 style="${H1}">Trade the Jackpot — Moonball Protocol</h1>
-    <p style="${P}">
-      Track live Powerball jackpot cycles and trade MOON, the Moonball Protocol
-      event-market token on Base. The dashboard shows real-time jackpot data,
-      multi-cycle charts, countdown timers, winning numbers, and the oracle
-      reference value — the same numbers the on-chain oracle publishes after
-      each draw.
-    </p>
-  </header>
-
-  ${INTERNAL_NAV}
-
-  <main>
-    <p style="${P}">
-      ${HOME_CONSENSUS_DESCRIPTION}
-    </p>
-
-    <div style="${DL}">
-      <div style="${DT}">
-        <span style="${LABEL}">Draw Schedule</span>
-        <span style="${VAL}">Mon · Wed · Sat</span>
-      </div>
-      <div style="${DT}">
-        <span style="${LABEL}">Draw Time</span>
-        <span style="${VAL}">10:59 PM ET</span>
-      </div>
-      <div style="${DT}">
-        <span style="${LABEL}">Starting Jackpot</span>
-        <span style="${VAL}">$20M per cycle</span>
-      </div>
-      <div style="${DT}">
-        <span style="${LABEL}">Data Sources</span>
-        <span style="${VAL}">4 providers</span>
-      </div>
-    </div>
-
-    <h2 style="${H2}">MOON Market</h2>
-    <p style="${P}">
-      ${MOON_MARKET_DESCRIPTION}
-    </p>
-
-    <h2 style="${H2}">Reference Value Explorer</h2>
-    <p style="${P}">
-      The reference value explorer lets you calculate the oracle reference value
-      and risk-adjusted value for any jackpot level. Enter a hypothetical jackpot
-      amount to see the corresponding oracle value, modelled reset probability,
-      and risk-adjusted reference. All calculations use the same formula the
-      on-chain oracle applies after each draw.
-    </p>
-
-    <h2 style="${H2}">Price History</h2>
-    <p style="${P}">
-      The price history chart shows the Powerball jackpot trajectory over time
-      across multiple draw cycles. Each cycle is plotted separately so you can
-      compare how the jackpot grew and when it reset. The chart is updated
-      automatically after each draw.
-    </p>
-
-    <h2 style="${H2}">Next Drawing</h2>
-    <p style="${P}">
-      A live countdown timer shows the time remaining until the next scheduled
-      Powerball draw (Mon, Wed, Sat at 10:59 PM ET). The timer resets after
-      each draw and updates the jackpot data once a consensus value is confirmed
-      from multiple sources.
-    </p>
-
-    <h2 style="${H2}">Latest Draw</h2>
-    <p style="${P}">
-      The latest draw section displays the most recent winning numbers, the
-      Powerball number, and the jackpot outcome for the last draw. Winning
-      numbers are sourced from the NY Open Data API and displayed alongside
-      the current cycle status and phase indicator.
-    </p>
-
-    <h2 style="${H2}">Oracle Reference</h2>
-    <p style="${P}">
-      The oracle reference panel shows the live MOON token oracle value,
-      reset probability, and risk-adjusted value for the current jackpot.
-      A confidence grade (High / Medium / Low) indicates how many independent
-      sources agreed on the current jackpot figure. The oracle reference is
-      information for traders — not a price promise or a redemption rate.
-    </p>
-
-    <h2 style="${H2}">Jackpot Reset Cycle</h2>
-    <p style="${P}">
-      The jackpot reset cycle panel tracks the current active Powerball cycle:
-      the number of draws since the last reset, the jackpot at cycle start,
-      the current estimated jackpot, and the current cycle phase. Phases
-      reflect how far the jackpot has grown and how elevated the reset
-      probability is.
-    </p>
-
-    <h2 style="${H2}">Cycle History</h2>
-    <p style="${P}">
-      Moonball archives every completed jackpot cycle from recent Powerball
-      history. The cycle history panel displays the peak jackpot, number of
-      draws, final winning numbers, and whether a winner was drawn for each
-      completed cycle. All cycles are plotted together on the multi-cycle
-      SVG chart for trajectory comparison.
-    </p>
-
-    <h2 style="${H2}">How It Works</h2>
-    <p style="${P}">
-      Moonball's dashboard works in three layers: an off-chain data aggregation
-      layer fetches jackpot data from multiple sources and reaches consensus;
-      an oracle layer publishes the verified reference value and reset probability;
-      and a market layer where MOON trades freely in a DEX pool. The dashboard
-      presents all three layers in real time so anyone can track the jackpot
-      cycle, understand the oracle reference, and follow MOON token activity
-      on Base.
-    </p>
-
-    <h2 style="${H2}">Tokenomics</h2>
-    <p style="${P}">
-      MOON has a fixed total supply minted at genesis — no future inflation or protocol-controlled minting.
-      The supply is split between a liquidity pool seed, team and advisor allocations subject to a vesting
-      cliff and linear on-chain unlock, and a community and ecosystem reserve.
-    </p>
-    <div style="${DL}">
-      <div style="${DT}">
-        <span style="${LABEL}">Price</span>
-        <span style="${VAL}">Free-float</span>
-      </div>
-      <div style="${DT}">
-        <span style="${LABEL}">Standard</span>
-        <span style="${VAL}">ERC-20</span>
-      </div>
-      <div style="${DT}">
-        <span style="${LABEL}">Market</span>
-        <span style="${VAL}">DEX pool</span>
-      </div>
-      <div style="${DT}">
-        <span style="${LABEL}">Oracle</span>
-        <span style="${VAL}">Multi-source</span>
-      </div>
-    </div>
-    <p style="${P}">
-      The pool launches at a 1% total fee tier with no Moonball surcharge. When the Safe collects
-      fees earned by Moonball-owned POL, 12% goes to the protocol treasury and 88% remains with POL.
-      The current 50% POL / 50% operations treasury allocation is mutable policy, not an automatic rule.
-    </p>
-
-    <h2 style="${H2}">How MOON Trades</h2>
-    <p style="${P}">
-      You buy and sell MOON in an open MOON/USDC liquidity pool on a decentralized exchange on Base.
-      The protocol does not mint to you, redeem from you, or guarantee any price — it only publishes
-      the oracle reference and helps keep the pool liquid through protocol-owned liquidity.
-    </p>
-    <p style="${P}">
-      The oracle publishes three reference numbers each draw cycle:
-    </p>
-    <ul style="color:#94A3B8;font-size:.9rem;padding-left:20px;margin:0 0 16px;">
-      <li><strong style="color:#fff;">Oracle value</strong> — $10 × (jackpot$M / $20M), scales linearly with the jackpot.</li>
-      <li><strong style="color:#fff;">Reset risk</strong> — modelled probability the next draw produces a winner.</li>
-      <li><strong style="color:#fff;">Risk-adjusted value</strong> — oracle value discounted by reset probability.</li>
-    </ul>
-
-    <h2 style="${H2}">What the Treasury Does</h2>
-    <p style="${P}">
-      The treasury is visible on-chain. Its mandate is growth and operations — never price defense.
-      Fee revenue comes from the 12% allocation applied when Moonball-owned POL fees are collected.
-    </p>
-    <div style="${CARD}">
-      <div style="color:#F5A623;font-size:.8rem;font-weight:700;margin-bottom:4px;">Seed and Deepen Liquidity</div>
-      <div style="${P}">Safe-owned protocol liquidity for the official market, managed under authorized treasury policy.</div>
-    </div>
-    <div style="${CARD}">
-      <div style="color:#F5A623;font-size:.8rem;font-weight:700;margin-bottom:4px;">Fund the Oracle</div>
-      <div style="${P}">Pays for multi-source jackpot verification published on-chain after every draw.</div>
-    </div>
-    <div style="${CARD}">
-      <div style="color:#F5A623;font-size:.8rem;font-weight:700;margin-bottom:4px;">Cover Operations</div>
-      <div style="${P}">Audits, infrastructure, and development. Funded under treasury policy from Moonball's collected POL fee allocation.</div>
-    </div>
-    <p style="${P}">Treasury reserves create no claim on the protocol and are not a redemption backstop.</p>
-
-    <h2 style="${H2}">Know the Risks</h2>
-    <div style="${RISK}">
-      <div style="${RISK_H}">Reset risk</div>
-      <p style="${P}">When a winner is drawn, the jackpot resets and the oracle reference drops sharply. The market price can fall just as fast.</p>
-    </div>
-    <div style="${RISK}">
-      <div style="${RISK_H}">No redemption</div>
-      <p style="${P}">There is no protocol buy-back or peg. The only way out of a position is to sell to another trader in the pool.</p>
-    </div>
-    <div style="${RISK}">
-      <div style="${RISK_H}">Market and liquidity risk</div>
-      <p style="${P}">Price is set by supply and demand. Thin liquidity means large trades can move the price and exits may be costly.</p>
-    </div>
-    <div style="${RISK}">
-      <div style="${RISK_H}">Smart contract risk</div>
-      <p style="${P}">Contracts can contain bugs. Audits reduce but never eliminate this risk. Only commit what you can afford to lose.</p>
-    </div>
-
-    <h2 style="${H2}">Frequently Asked Questions</h2>
-
-    <div style="${CARD}">
-      <div style="color:#fff;font-size:.9rem;font-weight:700;margin-bottom:4px;">Is MOON pegged to the jackpot?</div>
-      <p style="${P}">No. The oracle publishes a reference value derived from public jackpot data, but the price floats freely on the DEX. The market can trade above or below the reference at any time.</p>
-    </div>
-    <div style="${CARD}">
-      <div style="color:#fff;font-size:.9rem;font-weight:700;margin-bottom:4px;">Is MOON backed by anything?</div>
-      <p style="${P}">MOON is not a redeemable claim on reserves. Its value comes from what traders will pay in the open market. The oracle reference is derived from public jackpot data — it is information, not a backing or buy-back promise.</p>
-    </div>
-    <div style="${CARD}">
-      <div style="color:#fff;font-size:.9rem;font-weight:700;margin-bottom:4px;">Can I redeem MOON with the protocol?</div>
-      <p style="${P}">No. There is no mint or redeem. You buy and sell MOON with other traders in the liquidity pool.</p>
-    </div>
-    <div style="${CARD}">
-      <div style="color:#fff;font-size:.9rem;font-weight:700;margin-bottom:4px;">What happens if a whale sells a large position?</div>
-      <p style="${P}">Exits are DEX swaps, so a large sell moves the price down the pool's curve and pays slippage proportional to its size. No one can drain a treasury or jump a redemption queue — the pool simply reprices.</p>
-    </div>
-    <div style="${CARD}">
-      <div style="color:#fff;font-size:.9rem;font-weight:700;margin-bottom:4px;">What happens when someone wins the jackpot?</div>
-      <p style="${P}">The jackpot resets to its base, the oracle reference drops accordingly, and a new cycle begins. The market reprices on its own.</p>
-    </div>
-    <div style="${CARD}">
-      <div style="color:#fff;font-size:.9rem;font-weight:700;margin-bottom:4px;">Does the treasury protect the price?</div>
-      <p style="${P}">No. V1 has no automatic, mandatory, or price-defense buyback and the treasury does not guarantee a price. Any future discretionary treasury action requires separate review and creates no price-support obligation.</p>
-    </div>
-
-    <h2 style="${H2}">Roadmap</h2>
-    <div style="${CARD}">
-      <div style="color:#F5A623;font-size:.8rem;font-weight:700;letter-spacing:.05em;margin-bottom:4px;">Q2 2026 — IN PROGRESS</div>
-      <div style="color:#fff;font-size:.9rem;font-weight:700;margin-bottom:4px;">Smart Contract &amp; Audit</div>
-      <p style="${P}">Solidity contracts finalized, third-party audit complete, testnet deployment.</p>
-    </div>
-    <div style="${CARD}">
-      <div style="color:#94A3B8;font-size:.8rem;font-weight:700;letter-spacing:.05em;margin-bottom:4px;">Q3 2026</div>
-      <div style="color:#fff;font-size:.9rem;font-weight:700;margin-bottom:4px;">Powerball Launch</div>
-      <p style="${P}">Mainnet launch, oracle reference live, DEX liquidity pool seeded.</p>
-    </div>
-    <div style="${CARD}">
-      <div style="color:#94A3B8;font-size:.8rem;font-weight:700;letter-spacing:.05em;margin-bottom:4px;">Late 2026</div>
-      <div style="color:#fff;font-size:.9rem;font-weight:700;margin-bottom:4px;">Multi-Jackpot Expansion</div>
-      <p style="${P}">Mega Millions support, cross-chain bridging, institutional partnerships.</p>
-    </div>
-    <div style="${CARD}">
-      <div style="color:#94A3B8;font-size:.8rem;font-weight:700;letter-spacing:.05em;margin-bottom:4px;">2027</div>
-      <div style="color:#fff;font-size:.9rem;font-weight:700;margin-bottom:4px;">Staking &amp; Global Scaling</div>
-      <p style="${P}">Yield protocol, DAO governance, international lottery expansion.</p>
-    </div>
-
-    <h2 style="${H2}">About Us</h2>
-    <div style="${CARD}">
-      <div style="color:#fff;font-size:1rem;font-weight:700;margin-bottom:2px;">Edgar Ramirez — Founder &amp; CEO</div>
-      <p style="${P}">BBA in Finance with 6+ years in banking operations, compliance, and financial systems. Built Moonball from concept to MVP, designing its tokenomics, oracle reference model, and behavioral pricing framework. Focused on disciplined growth, regulatory clarity, and long-term protocol sustainability. Founded Moonball in April 2025 to pioneer behavioral-based digital assets.</p>
-    </div>
-    <div style="${CARD}">
-      <div style="color:#fff;font-size:1rem;font-weight:700;margin-bottom:2px;">Julio Valdes — Founding Frontend Engineer</div>
-      <p style="${P}">Full-stack engineer specializing in TypeScript, React, and Web3 integrations. Translates complex protocol mechanics into an intuitive user experience.</p>
-    </div>
-
-    <h2 style="${H2}">Join the Waitlist</h2>
-    <p style="${P}">
-      Moonball is currently in pre-launch. Join the waitlist to be notified when the protocol goes live,
-      receive early access, and get updates on the audit and mainnet deployment schedule.
-      Contact: <a href="mailto:edgar@moonball.info" style="color:#F5A623;">edgar@moonball.info</a>
-    </p>
-
-    <footer style="border-top:1px solid #1E293B;margin-top:24px;padding-top:16px;font-size:.75rem;color:#475569;text-align:center;">
-      Moonball Protocol · Reference implementation · Requires professional auditing before mainnet deployment · Moonball Labs, 2026
-    </footer>
-  </main>
-</div>`,
+      "Meet MOON, a pre-launch digital token with a reference value derived from the Powerball jackpot. Learn how it works and join the waitlist for launch updates.",
+    canonical: BASE_URL + "/",
+    bodyHtml:
+      '<main style="' +
+      STYLE +
+      '"><h1>Big jackpots. A new kind of market.</h1><p>Meet MOON: a digital token with a reference value that follows the Powerball jackpot. The market decides its price.</p><p>Pre-launch. Trading is not available yet.</p><nav><a href="/dashboard">Explore the dashboard</a> · <a href="/technical-paper">Read the technical paper</a></nav><h2>How it works</h2><p>The jackpot grows. Moonball checks public sources and updates a reference value. Once trading launches, buyers and sellers independently set the market price.</p><h2>Know the risks</h2><p>No guaranteed price or redemption. MOON does not give you a share of lottery winnings. Jackpot resets, limited liquidity, and smart-contract bugs can cause losses.</p><p>Enable JavaScript to view live data and join the waitlist.</p></main>',
+  },
+  "/dashboard": {
+    title: "Jackpot Dashboard | Moonball",
+    description:
+      "Explore Powerball jackpot data, drawing history, and Moonball’s reference model. Reference values are not market prices or investment returns.",
+    canonical: BASE_URL + "/dashboard",
+    bodyHtml: `<main style="${STYLE}"><h1>Jackpot dashboard</h1>${INTERNAL_NAV}<p>Explore Powerball jackpot data, drawing history, source verification, and Moonball’s reference model.</p><p>Reference values are not market prices or investment returns. MOON is pre-launch. There is no guaranteed price or redemption.</p><p>Enable JavaScript to view live jackpot data and interactive charts.</p></main>`,
   },
 
   "/technical-paper": {
@@ -430,56 +107,57 @@ const ROUTE_META: Record<string, RouteMeta> = {
       "Read the Moonball Protocol technical paper: tokenomics, oracle design, jackpot cycle mechanics, MOON token vesting schedule, and liquidity pool economics on Base.",
     canonical: `${BASE_URL}/technical-paper`,
     ogImage: `${BASE_URL}/social-card-technical-paper.png`,
-    ogImageAlt: "Moonball Protocol Technical Paper — oracle design, tokenomics, pool calculator, and liquidity economics on Base",
+    ogImageAlt:
+      "Moonball Protocol Technical Paper — oracle design, tokenomics, pool calculator, and liquidity economics on Base",
     ogType: "article",
     structuredData: [
       ...WEBSITE_GRAPH,
       {
         "@context": "https://schema.org",
         "@type": "TechArticle",
-        "headline": "Moonball Protocol — Technical Paper",
-        "description":
+        headline: "Moonball Protocol — Technical Paper",
+        description:
           "Technical documentation covering the Moonball Protocol design: free-floating ERC-20 event-market token on Base, multi-source consensus oracle, jackpot cycle mechanics, tokenomics, liquidity economics, and treasury policy.",
-        "url": `${BASE_URL}/technical-paper`,
-        "datePublished": "2025-04-01",
-        "dateModified": "2026-01-01",
-        "inLanguage": "en-US",
-        "author": {
+        url: `${BASE_URL}/technical-paper`,
+        datePublished: "2025-04-01",
+        dateModified: "2026-01-01",
+        inLanguage: "en-US",
+        author: {
           "@type": "Person",
-          "name": "Edgar Ramirez",
-          "jobTitle": "Founder & CEO",
-          "worksFor": {
+          name: "Edgar Ramirez",
+          jobTitle: "Founder & CEO",
+          worksFor: {
             "@type": "Organization",
-            "name": "Moonball Labs",
+            name: "Moonball Labs",
           },
         },
-        "publisher": {
+        publisher: {
           "@type": "Organization",
-          "name": "Moonball Labs",
-          "url": BASE_URL,
-          "logo": {
+          name: "Moonball Labs",
+          url: BASE_URL,
+          logo: {
             "@type": "ImageObject",
-            "url": DEFAULT_IMAGE,
+            url: DEFAULT_IMAGE,
           },
         },
-        "isPartOf": {
+        isPartOf: {
           "@type": "WebSite",
-          "name": "Moonball Protocol",
-          "url": BASE_URL,
+          name: "Moonball Protocol",
+          url: BASE_URL,
         },
-        "about": [
-          { "@type": "Thing", "name": "ERC-20 token" },
-          { "@type": "Thing", "name": "Powerball jackpot" },
-          { "@type": "Thing", "name": "Oracle reference model" },
-          { "@type": "Thing", "name": "Decentralized exchange" },
-          { "@type": "Thing", "name": "Tokenomics" },
+        about: [
+          { "@type": "Thing", name: "ERC-20 token" },
+          { "@type": "Thing", name: "Powerball jackpot" },
+          { "@type": "Thing", name: "Oracle reference model" },
+          { "@type": "Thing", name: "Decentralized exchange" },
+          { "@type": "Thing", name: "Tokenomics" },
         ],
-        "keywords":
+        keywords:
           "MOON token, ERC-20, Powerball, oracle, Base blockchain, event market, tokenomics, DeFi, liquidity pool, jackpot cycle",
-        "articleSection": [
+        articleSection: [
           "Protocol Overview",
           "Oracle Reference Model",
-          "Consensus & Confidence",
+          "Source Agreement",
           "No Redemption",
           "Liquidity & LP Economics",
           "Treasury Policy",
@@ -542,17 +220,17 @@ const ROUTE_META: Record<string, RouteMeta> = {
     </section>
 
     <section>
-      <h2 style="${H2}">3. Consensus &amp; Confidence</h2>
+      <h2 style="${H2}">3. Source Agreement</h2>
       <p style="${P}">
         The jackpot figure is sourced from multiple independent providers in
         parallel: powerball.com, usamega.com, calottery.com, and
         texaslottery.com. A value is only published once at least two sources
-        agree within a $5 million tolerance.
+        agree within a $5 million tolerance. The source count describes agreement in the
+        latest check, not a probability that the estimate is correct.
       </p>
       <p style="${P}">
-        <span style="${BADGE("#34D399")}">High</span> ≥ 3 sources agree — published immediately.<br/>
-        <span style="${BADGE("#FBBF24")}">Medium</span> exactly 2 sources agree — published with medium confidence.<br/>
-        <span style="${BADGE("#EF4444")}">Low</span> fewer than 2 sources — value held, not published.
+        <span style="${BADGE("#34D399")}">Verified</span> 2 to 4 sources agree — the actual count is shown.<br/>
+        <span style="${BADGE("#FBBF24")}">Unconfirmed</span> fewer than 2 sources agree, or equally sized groups conflict — the last verified value is held.
       </p>
       <p style="${P}">
         Post-draw (Mon/Wed/Sat after 10:59 PM ET), polling automatically
@@ -717,7 +395,8 @@ const ROUTE_META: Record<string, RouteMeta> = {
       "Overview of the Moonball Protocol smart contracts on Base: oracle reference model, MOON token design, contract status, and upcoming mainnet launch. Pre-launch — contracts in audit.",
     canonical: `${BASE_URL}/protocol`,
     ogImage: `${BASE_URL}/social-card-protocol.png`,
-    ogImageAlt: "Moonball Protocol — on-chain oracle reference and MOON token on Base, currently in pre-launch",
+    ogImageAlt:
+      "Moonball Protocol — on-chain oracle reference and MOON token on Base, currently in pre-launch",
     structuredData: [...WEBSITE_GRAPH],
     bodyHtml: `
 <div style="${STYLE}">
@@ -759,9 +438,9 @@ const ROUTE_META: Record<string, RouteMeta> = {
         <li><strong style="color:#fff;">Risk-adjusted value</strong> — oracle value discounted by reset probability; the more conservative reference as a draw approaches.</li>
       </ul>
       <p style="${P}">
-        The confidence grade (High / Medium / Low) reflects how many of four independent
-        sources (powerball.com, usamega.com, calottery.com, texaslottery.com) agreed within
-        a $5M tolerance. Values are published only when at least two sources agree.
+        The source agreement count shows how many of four independent sources
+        (powerball.com, usamega.com, calottery.com, texaslottery.com) matched within
+        a $5M tolerance in the latest check. Values are published only when at least two sources agree.
       </p>
     </section>
 
@@ -782,7 +461,7 @@ function buildHead(meta: RouteMeta): string {
   const ldJsonBlocks = (meta.structuredData ?? [])
     .map(
       (schema) =>
-        `<script type="application/ld+json">\n${JSON.stringify(schema, null, 2)}\n</script>`
+        `<script type="application/ld+json">\n${JSON.stringify(schema, null, 2)}\n</script>`,
     )
     .join("\n    ");
 
@@ -851,6 +530,6 @@ export function injectRouteMeta(html: string, pathname: string): string {
 
   return withHead.replace(
     '<div id="root"></div>',
-    `<div id="root">${meta.bodyHtml}</div>`
+    `<div id="root">${meta.bodyHtml}</div>`,
   );
 }

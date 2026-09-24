@@ -78,7 +78,8 @@ function computeConfidence(
   status: "verified" | "unconfirmed",
 ): "High" | "Medium" | "Low" {
   if (status !== "verified") return "Low";
-  if (consensusCount >= 2) return "High";
+  if (consensusCount >= 3) return "High";
+  if (consensusCount === 2) return "Medium";
   return "Low";
 }
 
