@@ -21,6 +21,7 @@ export interface PowerballLiveData {
 }
 let cachedData: PowerballLiveData | null = null;
 let cacheTimestamp = 0;
+let cachedCycleStart: string | null = null;
 
 function getNextDrawDate(fromDate: Date = new Date()): Date {
   const drawDays = [1, 3, 6]; // Mon, Wed, Sat
@@ -145,7 +146,7 @@ export async function fetchLivePowerballData(
   fallbackEstimated?: number
 ): Promise<PowerballLiveData> {
   const now = Date.now();
-  if (cachedData && now - cacheTimestamp < 60 * 1000) {
+  if (cachedData && cachedCycleStart === cycleStartDateStr && now - cacheTimestamp < 60 * 1000) {
     return cachedData;
   }
 
@@ -202,10 +203,11 @@ export async function fetchLivePowerballData(
 
     cachedData = result;
     cacheTimestamp = now;
+    cachedCycleStart = cycleStartDateStr;
     return result;
   } catch (err) {
     console.error("Error fetching live Powerball data:", err);
-    if (cachedData) return cachedData;
+    if (cachedData && cachedCycleStart === cycleStartDateStr) return cachedData;
     throw err;
   }
 }

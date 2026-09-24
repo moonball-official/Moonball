@@ -3,6 +3,14 @@ import assert from "node:assert/strict";
 import { injectRouteMeta } from "./meta";
 import { buildOracleModel } from "./oracle-model";
 import { VERIFIED_HISTORICAL_CYCLES } from "../client/src/lib/verified-powerball-history";
+import { effectiveCurrentCycleStart } from "./current-cycle";
+
+test("current cycle starts with the first draw after the latest verified jackpot win", () => {
+  assert.equal(VERIFIED_HISTORICAL_CYCLES.at(-1)?.winnerDate, "2026-08-12");
+  assert.equal(effectiveCurrentCycleStart("Jan 12, 2026"), "Aug 15, 2026");
+  assert.equal(effectiveCurrentCycleStart("Feb 3, 2026"), "Aug 15, 2026");
+  assert.equal(effectiveCurrentCycleStart("Sep 26, 2026"), "Sep 26, 2026");
+});
 
 test("historical jackpot cycles cover every scheduled draw through the August 2026 win", () => {
   const publishedWinners: [string, number, number][] = [

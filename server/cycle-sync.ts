@@ -1,6 +1,7 @@
 import { storage } from "./storage";
 import { fetchLivePowerballData } from "./powerball";
 import { ALL_CYCLES, CURRENT_CYCLE, JACKPOT_DATA } from "./constants";
+import { effectiveCurrentCycleStart } from "./current-cycle";
 import type { Cycle } from "@shared/schema";
 
 const RESET_THRESHOLD = 50;
@@ -139,7 +140,10 @@ export async function syncCycleState(): Promise<void> {
     const jackpotRow = await storage.getJackpotData();
     if (!jackpotRow) return;
 
-    const liveData = await fetchLivePowerballData(jackpotRow.cycleStart, jackpotRow.estimated);
+    const liveData = await fetchLivePowerballData(
+      effectiveCurrentCycleStart(jackpotRow.cycleStart),
+      jackpotRow.estimated,
+    );
     if (liveData.verificationStatus !== "verified") {
       console.warn("[cycle-sync] Skipping state mutation: jackpot is not consensus-verified.");
       return;
