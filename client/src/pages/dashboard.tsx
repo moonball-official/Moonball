@@ -189,6 +189,7 @@ export default function Dashboard() {
             ? liveData.winningNumbers
             : JACKPOT_DATA.winningNumbers,
         powerball: liveData.powerball ?? JACKPOT_DATA.powerball,
+        cycleStart: liveData.cycleStart ?? JACKPOT_DATA.cycleStart,
         drawsWithoutWinner:
           liveData.drawsInCurrentCycle ?? JACKPOT_DATA.drawsWithoutWinner,
         jackpotGrowth:

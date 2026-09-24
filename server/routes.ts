@@ -7,6 +7,7 @@ import { insertWaitlistEntrySchema } from "@shared/schema";
 import { fetchLivePowerballData } from "./powerball";
 import { syncCycleState, seedHistoricalCycles } from "./cycle-sync";
 import { buildOracleModel } from "./oracle-model";
+import { effectiveCurrentCycleStart } from "./current-cycle";
 
 const trackSchema = z.object({
   type: z.enum(["pageview", "event"]),
@@ -64,7 +65,9 @@ export async function registerRoutes(
       await syncCycleState();
 
       const jackpotRow = await storage.getJackpotData();
-      const cycleStart = jackpotRow?.cycleStart || (req.query.cycleStart as string) || "Feb 3, 2026";
+      const cycleStart = effectiveCurrentCycleStart(
+        jackpotRow?.cycleStart || (req.query.cycleStart as string),
+      );
       const liveData = await fetchLivePowerballData(cycleStart, jackpotRow?.estimated);
       const parsedCycleStart = new Date(cycleStart);
       if (Number.isNaN(parsedCycleStart.getTime())) {
@@ -84,9 +87,9 @@ export async function registerRoutes(
         cycleId,
         drawId,
         winner: jackpotRow?.winner || "No",
-        cycleStart: jackpotRow?.cycleStart || cycleStart,
+        cycleStart,
         moonPriceAtReset: jackpotRow?.moonPriceAtReset || 20,
-        drawsInCurrentCycle: jackpotRow?.drawsWithoutWinner ?? liveData.drawsInCurrentCycle,
+        drawsInCurrentCycle: liveData.drawsInCurrentCycle,
         verificationStatus: liveData.verificationStatus,
         verificationSources: liveData.verificationSources,
         sourceObservations: liveData.sourceObservations,
