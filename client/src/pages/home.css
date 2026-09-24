@@ -1,0 +1,858 @@
+.moon-site {
+  --moon-ink: #f3f0e8;
+  --moon-muted: #a3a8b4;
+  --moon-gold: #f4bc51;
+  background: #0d1017;
+  color: var(--moon-ink);
+  font-family: "Nunito Sans", sans-serif;
+  font-size: 16px;
+  line-height: 1.65;
+}
+.moon-site * {
+  box-sizing: border-box;
+}
+.moon-site a {
+  color: inherit;
+  text-decoration: none;
+}
+.moon-site button,
+.moon-site input {
+  font: inherit;
+}
+.moon-site a,
+.moon-site button,
+.moon-site summary,
+.moon-site input {
+  -webkit-tap-highlight-color: transparent;
+}
+.moon-site :focus-visible {
+  outline: 2px solid var(--moon-gold);
+  outline-offset: 5px;
+}
+.moon-site section[id],
+.moon-site main[id] {
+  scroll-margin-top: 100px;
+}
+.moon-container {
+  width: min(1120px, calc(100% - 80px));
+  margin-inline: auto;
+}
+.moon-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: #0d1017f2;
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid #ffffff10;
+}
+.moon-header-inner {
+  min-height: 88px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+.moon-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 25px;
+  font-weight: 800;
+  letter-spacing: -0.9px;
+}
+.moon-brand-dot {
+  color: var(--moon-gold);
+}
+.moon-nav {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.moon-nav > a:not(.moon-button) {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  color: #c5c8d0;
+}
+.moon-site a:hover {
+  color: var(--moon-gold);
+}
+.moon-site .moon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  background: var(--moon-gold);
+  color: #18160f;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  padding: 15px 23px;
+  font-weight: 800;
+  font-size: 15px;
+  line-height: 1.4;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    transform 0.2s;
+}
+.moon-site .moon-button:hover {
+  background: #ffd47b;
+  color: #18160f;
+  transform: translateY(-1px);
+}
+.moon-site .moon-button-small {
+  font-size: 13px;
+  padding: 12px 16px;
+  gap: 12px;
+}
+.moon-button:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+.moon-menu-toggle {
+  display: none;
+}
+.moon-skip {
+  position: fixed;
+  top: -100px;
+  left: 16px;
+  z-index: 100;
+  padding: 12px 20px;
+  background: #0d1017;
+}
+.moon-skip:focus {
+  top: 12px;
+}
+.moon-hero {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  align-items: center;
+  gap: 64px;
+  padding-block: 82px 68px;
+}
+.moon-eyebrow {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.65px;
+  text-transform: uppercase;
+  color: var(--moon-gold);
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+}
+.moon-status-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--moon-gold);
+}
+.moon-site h1 {
+  font-size: clamp(52px, 5.6vw, 76px);
+  line-height: 1.06;
+  letter-spacing: -3.8px;
+  font-weight: 700;
+  margin: 24px 0;
+}
+.moon-site h1 > span {
+  color: var(--moon-gold);
+}
+.moon-lead {
+  max-width: 450px;
+  font-size: 18px;
+  color: #b4b9c4;
+  line-height: 1.75;
+  margin: 0;
+}
+.moon-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 26px;
+  align-items: center;
+  margin-top: 30px;
+}
+.moon-text-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  font-size: 14px;
+}
+.moon-hero-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--moon-muted);
+  font-size: 12px;
+  margin: 20px 0 0;
+}
+.moon-hero-note .moon-status-dot {
+  background: #a3a8b4;
+  width: 5px;
+  height: 5px;
+}
+.moon-hero-visual {
+  position: relative;
+  padding-top: 212px;
+}
+.moon-orbit-art {
+  position: absolute;
+  width: 100%;
+  height: 290px;
+  top: -84px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(ellipse, #e5a33b0b, transparent 65%);
+}
+.moon-orbit-art > img {
+  position: relative;
+  z-index: 1;
+  transform: rotate(-14deg);
+  filter: drop-shadow(0 0 35px #eeb34215);
+}
+.moon-orbit {
+  position: absolute;
+  width: 270px;
+  height: 155px;
+  border: 1px solid #f4bc5120;
+  border-radius: 50%;
+  transform: rotate(-24deg);
+}
+.moon-orbit-inner {
+  width: 220px;
+  height: 125px;
+  border-color: #f4bc5112;
+}
+.moon-orbit-point {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  background: var(--moon-gold);
+  border-radius: 50%;
+  top: 92px;
+  right: 13%;
+}
+.moon-star {
+  position: absolute;
+  color: #ccb37e;
+  font-size: 19px;
+  font-weight: 300;
+}
+.moon-star-one {
+  top: 47px;
+  left: 24%;
+}
+.moon-star-two {
+  bottom: 37px;
+  right: 24%;
+  font-size: 13px;
+}
+.moon-jackpot-panel {
+  position: relative;
+  border: 1px solid #ffffff1c;
+  background: linear-gradient(145deg, #1c202a, #141820);
+  border-radius: 14px;
+  padding: 28px;
+  box-shadow: 0 24px 70px #00000030;
+}
+.moon-jackpot-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: #d1d3da;
+}
+.moon-data-badge {
+  color: #c2c8bb;
+  font-size: 10px;
+  padding: 3px 8px;
+  border: 1px solid #c2c8bb30;
+  border-radius: 5px;
+}
+.moon-jackpot-number {
+  font-size: 68px;
+  line-height: 1.1;
+  letter-spacing: -3px;
+  font-weight: 700;
+  margin-top: 22px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.moon-jackpot-number > span {
+  font-size: 19px;
+  letter-spacing: -0.5px;
+  color: #c3c6cf;
+  font-weight: 400;
+}
+.moon-jackpot-caption {
+  color: #a6acb9;
+  font-size: 11px;
+  margin: 9px 0 23px;
+}
+.moon-draw-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid #ffffff12;
+  padding: 18px 0;
+}
+.moon-draw-row span,
+.moon-draw-row strong {
+  display: block;
+}
+.moon-draw-row span {
+  font-size: 11px;
+  color: var(--moon-muted);
+  margin-bottom: 3px;
+}
+.moon-draw-row strong {
+  font-size: 13px;
+  font-weight: 600;
+}
+.moon-draw-row > a {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid #ffffff20;
+  border-radius: 50%;
+}
+.moon-panel-link {
+  border-top: 1px solid #ffffff12;
+  padding-top: 17px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--moon-gold) !important;
+}
+.moon-intro-strip {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  padding-block: 24px;
+  border-block: 1px solid #ffffff12;
+  font-size: 13px;
+  color: #b5bac4;
+}
+.moon-intro-strip span::before {
+  content: "✦";
+  color: #9f875c;
+  margin-right: 11px;
+}
+.moon-section {
+  padding-block: 86px;
+}
+.moon-site h2 {
+  font-size: clamp(32px, 3.3vw, 44px);
+  line-height: 1.16;
+  font-weight: 600;
+  letter-spacing: -1.6px;
+  margin: 15px 0 0;
+}
+.moon-section-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 40px;
+  margin-bottom: 40px;
+}
+.moon-section-heading > p {
+  margin: 0 0 3px;
+  font-size: 14px;
+  color: var(--moon-muted);
+}
+.moon-steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 42px;
+}
+.moon-steps article {
+  border-top: 1px solid #ffffff20;
+  padding-top: 20px;
+}
+.moon-step-number {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--moon-gold);
+}
+.moon-step-number > span {
+  font-size: 22px;
+  font-weight: 400;
+  color: #9d927b;
+}
+.moon-steps h3 {
+  font-size: 19px;
+  line-height: 1.4;
+  margin: 20px 0 12px;
+  letter-spacing: -0.4px;
+  font-weight: 700;
+}
+.moon-steps p {
+  color: var(--moon-muted);
+  font-size: 15px;
+  margin: 0;
+}
+.moon-risk-section {
+  display: grid;
+  grid-template-columns: 0.9fr 1.2fr;
+  gap: 90px;
+  border-radius: 12px;
+  border: 1px solid #bdaa791c;
+  background: #171922;
+  padding: 42px;
+}
+.moon-risk-section .moon-text-link {
+  margin-top: 26px;
+  color: var(--moon-gold);
+}
+.moon-risk-list p {
+  font-size: 14px;
+  color: #b3b8c3;
+  margin: 0;
+  padding-block: 18px;
+  border-bottom: 1px solid #ffffff10;
+}
+.moon-risk-list p:first-child {
+  padding-top: 0;
+}
+.moon-risk-list p:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+.moon-risk-list strong {
+  display: block;
+  color: #f0ede6;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.moon-about,
+.moon-faq {
+  display: grid;
+  grid-template-columns: 0.9fr 1.2fr;
+  gap: 90px;
+}
+.moon-about {
+  border-bottom: 1px solid #ffffff12;
+}
+.moon-about p {
+  margin: 0 0 16px;
+  color: #c3c7d0;
+}
+.moon-about .moon-muted {
+  color: var(--moon-muted);
+  font-size: 14px;
+}
+.moon-inline-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  margin-top: 24px;
+}
+.moon-faq > div > p {
+  font-size: 14px;
+  color: var(--moon-muted);
+  margin-top: 18px;
+}
+.moon-faq > div > p > a {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.moon-faq-list {
+  border-top: 1px solid #ffffff20;
+}
+.moon-faq details {
+  border-bottom: 1px solid #ffffff20;
+}
+.moon-faq summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  cursor: pointer;
+  padding-block: 21px;
+  font-size: 16px;
+  font-weight: 600;
+  list-style: none;
+}
+.moon-faq summary::-webkit-details-marker {
+  display: none;
+}
+.moon-faq summary svg {
+  color: var(--moon-gold);
+  flex-shrink: 0;
+}
+.moon-faq details[open] summary svg {
+  transform: rotate(180deg);
+}
+.moon-faq details p {
+  margin: 0 0 24px;
+  color: var(--moon-muted);
+  font-size: 15px;
+}
+.moon-waitlist {
+  padding: 44px;
+  background: #f2c76b;
+  color: #1d211e;
+  border-radius: 12px;
+  display: grid;
+  grid-template-columns: 1fr 1.15fr;
+  gap: 55px;
+  align-items: center;
+}
+.moon-waitlist .moon-eyebrow {
+  color: #554522;
+}
+.moon-waitlist h2 {
+  margin-top: 12px;
+}
+.moon-waitlist p {
+  margin: 16px 0 0;
+  font-size: 14px;
+}
+.moon-signup label {
+  font-size: 13px;
+  font-weight: 800;
+  display: block;
+  margin-bottom: 8px;
+}
+.moon-signup-row {
+  display: flex;
+  gap: 8px;
+}
+.moon-signup input {
+  min-width: 0;
+  width: 100%;
+  background: #fff9e9;
+  border: 1px solid #5d491b40;
+  color: #1c211d;
+  border-radius: 6px;
+  padding: 13px;
+  font-size: 14px;
+}
+.moon-signup input::placeholder {
+  color: #66614f;
+}
+.moon-signup .moon-button {
+  background: #20251f;
+  color: #fff7e8;
+  font-size: 13px;
+  padding: 14px 16px;
+  gap: 12px;
+}
+.moon-signup .moon-button:hover {
+  background: #343d32;
+  color: #fff7e8;
+}
+.moon-signup .moon-signup-note {
+  font-size: 11px;
+  color: #524626;
+  margin-top: 12px;
+}
+.moon-waitlist :focus-visible {
+  outline-color: #20251f;
+}
+.moon-signup .moon-form-message {
+  min-height: 22px;
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.moon-form-message.is-error {
+  color: #752210;
+}
+.moon-footer {
+  padding-block: 50px 28px;
+}
+.moon-footer-top,
+.moon-footer-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 32px;
+}
+.moon-footer-top nav {
+  display: flex;
+  gap: 24px;
+  font-size: 12px;
+  color: #b4bac6;
+}
+.moon-footer-bottom {
+  border-top: 1px solid #ffffff12;
+  margin-top: 26px;
+  padding-top: 20px;
+  color: #a3a8b4;
+  font-size: 11px;
+  align-items: flex-start;
+}
+.moon-footer-bottom > span {
+  white-space: nowrap;
+}
+.moon-footer-bottom p {
+  margin: 0;
+  max-width: 560px;
+  text-align: right;
+}
+@media (max-width: 1000px) {
+  .moon-hero {
+    gap: 36px;
+  }
+  .moon-nav {
+    gap: 20px;
+  }
+  .moon-site h1 {
+    font-size: 58px;
+  }
+  .moon-actions {
+    gap: 18px;
+  }
+  .moon-about,
+  .moon-faq,
+  .moon-risk-section {
+    gap: 45px;
+  }
+  .moon-waitlist {
+    gap: 30px;
+    padding: 32px;
+  }
+  .moon-signup-row {
+    flex-direction: column;
+  }
+  .moon-hero-visual {
+    padding-top: 213px;
+  }
+  .moon-jackpot-panel {
+    padding: 22px;
+  }
+  .moon-jackpot-number {
+    font-size: 57px;
+  }
+  .moon-jackpot-heading {
+    flex-wrap: wrap;
+  }
+  .moon-orbit {
+    width: 250px;
+  }
+  .moon-orbit-inner {
+    width: 215px;
+  }
+}
+@media (max-width: 760px) {
+  .moon-container {
+    width: calc(100% - 40px);
+  }
+  .moon-header-inner {
+    min-height: 74px;
+  }
+  .moon-brand {
+    font-size: 24px;
+  }
+  .moon-menu-toggle {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border: 1px solid #ffffff25;
+    border-radius: 6px;
+    background: none;
+    color: var(--moon-ink);
+    cursor: pointer;
+  }
+  .moon-nav {
+    display: none;
+    position: absolute;
+    top: 74px;
+    left: 0;
+    right: 0;
+    background: #141820;
+    padding: 22px;
+    box-shadow: 0 20px 40px #0007;
+  }
+  .moon-nav.is-open {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+  }
+  .moon-nav > a {
+    padding: 13px;
+  }
+  .moon-nav > .moon-button {
+    margin-top: 10px;
+  }
+  .moon-hero {
+    grid-template-columns: 1fr;
+    gap: 26px;
+    padding-block: 48px 35px;
+  }
+  .moon-site h1 {
+    font-size: clamp(46px, 9vw, 64px);
+    letter-spacing: -2.6px;
+    margin-top: 20px;
+  }
+  .moon-desktop-break {
+    display: none;
+  }
+  .moon-lead {
+    font-size: 16px;
+    max-width: 520px;
+  }
+  .moon-hero-visual {
+    padding-top: 138px;
+    max-width: 460px;
+    width: 100%;
+    margin: 18px auto 0;
+  }
+  .moon-orbit-art {
+    top: -96px;
+    height: 230px;
+  }
+  .moon-orbit-art > img {
+    width: 94px !important;
+    height: 94px !important;
+  }
+  .moon-orbit {
+    height: 120px;
+    width: 200px;
+  }
+  .moon-orbit-inner {
+    width: 160px;
+    height: 95px;
+  }
+  .moon-orbit-point {
+    top: 65px;
+    right: 20%;
+  }
+  .moon-star-one {
+    top: 42px;
+  }
+  .moon-star-two {
+    bottom: 35px;
+  }
+  .moon-jackpot-panel {
+    padding: 22px;
+  }
+  .moon-jackpot-heading {
+    flex-wrap: nowrap;
+  }
+  .moon-jackpot-number {
+    font-size: 57px;
+    margin-top: 18px;
+  }
+  .moon-intro-strip {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 9px 20px;
+    font-size: 11px;
+  }
+  .moon-section {
+    padding-block: 54px;
+  }
+  .moon-section-heading {
+    display: block;
+    margin-bottom: 28px;
+  }
+  .moon-section-heading > p {
+    margin-top: 18px;
+  }
+  .moon-steps {
+    grid-template-columns: 1fr;
+    gap: 25px;
+  }
+  .moon-steps article {
+    padding-top: 14px;
+  }
+  .moon-steps h3 {
+    margin-top: 8px;
+  }
+  .moon-risk-section,
+  .moon-about,
+  .moon-faq,
+  .moon-waitlist {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+  .moon-risk-section {
+    padding: 25px;
+  }
+  .moon-risk-section h2 br,
+  .moon-about h2 br {
+    display: none;
+  }
+  .moon-risk-section .moon-text-link {
+    margin-top: 18px;
+  }
+  .moon-waitlist {
+    padding: 28px 24px;
+    gap: 24px;
+  }
+  .moon-signup-row {
+    flex-direction: row;
+  }
+  .moon-signup .moon-button {
+    padding-inline: 12px;
+    gap: 8px;
+  }
+  .moon-footer-top,
+  .moon-footer-bottom {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 20px;
+  }
+  .moon-footer-top nav {
+    flex-wrap: wrap;
+    gap: 16px 24px;
+  }
+  .moon-footer-bottom p {
+    text-align: left;
+  }
+  .moon-site h2 {
+    font-size: 34px;
+  }
+  .moon-eyebrow {
+    font-size: 10px;
+    letter-spacing: 1.2px;
+  }
+}
+@media (max-width: 380px) {
+  .moon-signup-row {
+    flex-direction: column;
+  }
+  .moon-jackpot-heading {
+    flex-wrap: wrap;
+  }
+  .moon-jackpot-number {
+    font-size: 49px;
+  }
+  .moon-actions {
+    gap: 16px;
+  }
+  .moon-site h1 {
+    font-size: 45px;
+  }
+  .moon-brand {
+    font-size: 22px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .moon-site *,
+  .moon-site *::before,
+  .moon-site *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}

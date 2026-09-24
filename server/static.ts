@@ -3,10 +3,18 @@ import fs from "fs";
 import path from "path";
 import { injectRouteMeta } from "./meta";
 
-const SPA_ROUTES = new Set(["/", "/technical-paper", "/analytics", "/protocol"]);
+const SPA_ROUTES = new Set([
+  "/",
+  "/dashboard",
+  "/technical-paper",
+  "/analytics",
+  "/protocol",
+]);
 
-export function serveStatic(app: Express) {
-  const distPath = path.resolve(__dirname, "public");
+export function serveStatic(
+  app: Express,
+  distPath = path.resolve(__dirname, "public"),
+) {
   if (!fs.existsSync(distPath)) {
     throw new Error(
       `Could not find the build directory: ${distPath}, make sure to build the client first`,
@@ -18,7 +26,7 @@ export function serveStatic(app: Express) {
   const indexPath = path.resolve(distPath, "index.html");
 
   app.use("/{*path}", (req, res) => {
-    const rawPath = req.path;
+    const rawPath = req.originalUrl.split("?")[0];
 
     // Redirect trailing-slash variants of known routes to canonical no-slash URL
     if (rawPath !== "/" && rawPath.endsWith("/")) {
@@ -35,7 +43,8 @@ export function serveStatic(app: Express) {
 
     try {
       const raw = fs.readFileSync(indexPath, "utf-8");
-      const cleanPathname = req.originalUrl.split("?")[0].split("#")[0].replace(/\/+$/, "") || "/";
+      const cleanPathname =
+        req.originalUrl.split("?")[0].split("#")[0].replace(/\/+$/, "") || "/";
       const html = injectRouteMeta(raw, cleanPathname);
       res.status(status).set({ "Content-Type": "text/html" }).end(html);
     } catch {

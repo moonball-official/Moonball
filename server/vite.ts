@@ -9,7 +9,13 @@ import { injectRouteMeta } from "./meta";
 
 const viteLogger = createLogger();
 
-const SPA_ROUTES = new Set(["/", "/technical-paper", "/analytics", "/protocol"]);
+const SPA_ROUTES = new Set([
+  "/",
+  "/dashboard",
+  "/technical-paper",
+  "/analytics",
+  "/protocol",
+]);
 
 export async function setupVite(server: Server, app: Express) {
   const serverOptions = {
@@ -35,7 +41,7 @@ export async function setupVite(server: Server, app: Express) {
   app.use(vite.middlewares);
 
   app.use("/{*path}", async (req, res, next) => {
-    const rawPath = req.path;
+    const rawPath = req.originalUrl.split("?")[0];
 
     // Redirect trailing-slash variants of known routes to canonical no-slash URL
     if (rawPath !== "/" && rawPath.endsWith("/")) {
@@ -62,7 +68,8 @@ export async function setupVite(server: Server, app: Express) {
       );
       const url = req.originalUrl;
       let page = await vite.transformIndexHtml(url, template);
-      const pathname = (req.originalUrl.split("?")[0].split("#")[0].replace(/\/+$/, "") || "/");
+      const pathname =
+        req.originalUrl.split("?")[0].split("#")[0].replace(/\/+$/, "") || "/";
       page = injectRouteMeta(page, pathname);
       res.status(200).set({ "Content-Type": "text/html" }).end(page);
     } catch (e) {

@@ -2,30 +2,38 @@ import { useState, useEffect } from "react";
 import { MoonLogo } from "./MoonLogo";
 import { T } from "@/lib/constants";
 
+const bootLines = [
+  "MOONBALL PROTOCOL",
+  "Initializing public data feeds...",
+  "Preparing the reference model...",
+  "Loading jackpot history...",
+  "MOON market price: set by traders",
+  "No peg or redemption",
+  "Pre-launch experience",
+  "SYSTEM READY",
+];
+
 export function BootScreen({ onComplete }: { onComplete: () => void }) {
   const [lines, setLines] = useState<string[]>([]);
-  const bootLines = [
-    "MOONBALL PROTOCOL v2.1.0",
-    "Initializing Oracle feeds...",
-    "Connecting Chainlink CCIP...",
-    "Syncing Powerball data...",
-    "ERC-20 contract verified ✓",
-    "Peg ratio locked: $1 / $1M ✓",
-    "Feed status: ACTIVE ✓",
-    "SYSTEM READY",
-  ];
 
   useEffect(() => {
+    const timers: number[] = [];
     bootLines.forEach((line, i) => {
-      setTimeout(() => {
+      timers.push(window.setTimeout(() => {
         setLines((prev) => [...prev, line]);
-        if (i === bootLines.length - 1) setTimeout(onComplete, 600);
-      }, i * 280);
+        if (i === bootLines.length - 1) {
+          timers.push(window.setTimeout(onComplete, 600));
+        }
+      }, i * 280));
     });
-  }, []);
+    return () => timers.forEach((timer) => window.clearTimeout(timer));
+  }, [onComplete]);
 
   return (
     <div
+      role="status"
+      aria-label="Loading Moonball"
+      data-testid="boot-screen"
       style={{
         position: "fixed",
         inset: 0,

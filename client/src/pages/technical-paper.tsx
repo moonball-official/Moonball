@@ -1,14 +1,15 @@
 import { useEffect, useState } from "react";
-import { MoonLogo } from "@/components/MoonLogo";
+import { SiteFooter, SiteHeader } from "@/components/SiteChrome";
+import "./inner-pages.css";
 import { Card } from "@/components/ui/GlowCard";
 import { SectionLabel } from "@/components/ui/StatRow";
 import { T, TOKENOMICS, formatUsd, vestingStatus } from "@/lib/constants";
-import { useLocation } from "wouter";
 import { usePageView, useScrollDepth } from "@/hooks/use-analytics";
 import { useLivePowerball, type OracleModel } from "@/hooks/use-moonball";
 
+const PAPER_DATA_FONT = "'Aptos', 'Segoe UI', sans-serif";
+
 export default function TechnicalPaper() {
-  const [, navigate] = useLocation();
   usePageView("/technical-paper");
   useEffect(() => { window.scrollTo(0, 0); }, []);
   useScrollDepth();
@@ -16,80 +17,24 @@ export default function TechnicalPaper() {
   const oracle = live?.oracle;
 
   return (
-    <div
-      style={{
-        fontFamily: "'Rajdhani', sans-serif",
-        background: T.bg,
-        minHeight: "100vh",
-        maxWidth: 430,
-        margin: "0 auto",
-        position: "relative",
-        color: T.textPrimary,
-        paddingBottom: 40,
-      }}
-    >
-      {/* Header */}
-      <header
-        style={{
-          position: "sticky",
-          top: 0,
-          zIndex: 50,
-          background: "rgba(11,14,23,0.95)",
-          backdropFilter: "blur(20px)",
-          borderBottom: `1px solid ${T.border}`,
-          padding: "10px 20px",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <MoonLogo size={36} animate />
-          <span
-            style={{
-              fontFamily: "'Montserrat'",
-              fontSize: 20,
-              fontWeight: 800,
-              letterSpacing: 3,
-              background: `linear-gradient(135deg, ${T.goldLight}, ${T.gold})`,
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-            }}
-          >
-            MOONBALL
-          </span>
+    <div className="moon-site moon-paper">
+      <SiteHeader active="docs" />
+      <main id="main" className="moon-inner-main">
+        <div className="moon-inner-intro">
+          <p className="moon-eyebrow"><span className="moon-status-dot" /> THE DETAILS</p>
+          <h1>Technical paper<span className="moon-brand-dot">.</span></h1>
+          <p>The mechanics behind MOON: its market, jackpot reference, data sources, and risks.</p>
         </div>
-        <a
-          href="/"
-          data-testid="button-back-home"
-          onClick={(e) => { e.preventDefault(); navigate("/"); }}
-          style={{
-            background: "rgba(255,255,255,0.05)",
-            border: `1px solid ${T.border}`,
-            borderRadius: 8,
-            padding: "6px 14px",
-            fontFamily: "'Nunito Sans'",
-            fontSize: 11,
-            color: T.textSecondary,
-            cursor: "pointer",
-            transition: "all 0.2s",
-            textDecoration: "none",
-            display: "inline-block",
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.borderColor = T.gold; e.currentTarget.style.color = "#fff"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.borderColor = T.border; e.currentTarget.style.color = T.textSecondary; }}
-        >
-          Back
-        </a>
-      </header>
-
-      <main style={{ padding: "0 16px", marginTop: 16 }}>
-        <h1 className="sr-only">Moonball Technical Paper</h1>
-        <Card style={{ marginBottom: 14, overflow: "visible" }}>
+        <nav className="moon-doc-toc" aria-label="On this page">
+          <a href="#overview">Overview</a><a href="#reference-model">Reference model</a>
+          <a href="#consensus">Data verification</a><a href="#liquidity">Liquidity</a>
+          <a href="#risk">Risk</a><a href="#allocation">Token allocation</a><a href="#calculator">Pool calculator</a>
+        </nav>
+        <Card className="moon-document" style={{ overflow: "visible" }}>
           <SectionLabel icon="📄" text="Technical Paper" />
 
           {/* 1 — Protocol Overview */}
-          <div style={{ marginBottom: 18 }}>
+          <div id="overview" style={{ marginBottom: 18 }}>
             <h2 style={{ fontFamily: "'Montserrat'", fontSize: 12, fontWeight: 700, color: T.gold, letterSpacing: 1, marginBottom: 8, textTransform: "uppercase" }}>
               1. Protocol Overview
             </h2>
@@ -112,7 +57,7 @@ export default function TechnicalPaper() {
           </div>
 
           {/* 2 — Oracle Reference Model */}
-          <div style={{ marginBottom: 18 }}>
+          <div id="reference-model" style={{ marginBottom: 18 }}>
             <h2 style={{ fontFamily: "'Montserrat'", fontSize: 12, fontWeight: 700, color: T.gold, letterSpacing: 1, marginBottom: 8, textTransform: "uppercase" }}>
               2. Oracle Reference Model
             </h2>
@@ -129,33 +74,32 @@ export default function TechnicalPaper() {
             </p>
           </div>
 
-          {/* 3 — Consensus & Confidence */}
-          <div style={{ marginBottom: 18 }}>
+          {/* 3 — Source Agreement */}
+          <div id="consensus" style={{ marginBottom: 18 }}>
             <h2 style={{ fontFamily: "'Montserrat'", fontSize: 12, fontWeight: 700, color: T.gold, letterSpacing: 1, marginBottom: 8, textTransform: "uppercase" }}>
-              3. Consensus & Confidence
+              3. Source Agreement
             </h2>
             <p style={{ fontFamily: "'Rajdhani'", fontSize: 12, color: T.textSecondary, lineHeight: 1.6, marginBottom: 10 }}>
-              The jackpot figure is sourced from multiple independent providers in parallel. A value is only published once at least two sources agree within tolerance, and a confidence grade reflects how many concur.
+              All four sources are checked in parallel. A jackpot estimate is verified when a clear group of at least two fresh sources agrees within $5 million. The displayed count shows how many sources matched in that check; it is not a probability that the estimate is correct. If fewer than two agree or equally sized groups conflict, the last verified value is held.
             </p>
             <div style={{ overflow: "hidden", borderRadius: 8, border: `1px solid ${T.border}` }}>
               <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "'Nunito Sans'", fontSize: 10 }}>
                 <thead>
                   <tr style={{ background: "rgba(245,166,35,0.1)" }}>
                     <th style={{ padding: "6px 8px", textAlign: "left", color: T.gold, fontWeight: 700, borderBottom: `1px solid ${T.border}` }}>SOURCES AGREEING</th>
-                    <th style={{ padding: "6px 8px", textAlign: "left", color: T.gold, fontWeight: 700, borderBottom: `1px solid ${T.border}` }}>CONFIDENCE</th>
+                    <th style={{ padding: "6px 8px", textAlign: "left", color: T.gold, fontWeight: 700, borderBottom: `1px solid ${T.border}` }}>STATUS SHOWN</th>
                     <th style={{ padding: "6px 8px", textAlign: "left", color: T.gold, fontWeight: 700, borderBottom: `1px solid ${T.border}` }}>PUBLISHED?</th>
                   </tr>
                 </thead>
                 <tbody>
                   {[
-                    { n: "\u2265 3", conf: "High", sc: "#34D399", pub: "Yes" },
-                    { n: "2", conf: "Medium", sc: "#FBBF24", pub: "Yes" },
-                    { n: "< 2", conf: "Low", sc: "#EF4444", pub: "Held" },
+                    { n: "2–4", status: "Verified · actual count", sc: "#34D399", pub: "Yes" },
+                    { n: "< 2 or tied groups", status: "Unconfirmed", sc: "#FBBF24", pub: "Held" },
                   ].map((r, i) => (
-                    <tr key={i} style={{ borderBottom: i < 2 ? `1px solid ${T.border}` : "none" }}>
+                    <tr key={i} style={{ borderBottom: i === 0 ? `1px solid ${T.border}` : "none" }}>
                       <td style={{ padding: "6px 8px", color: "#fff", fontFamily: "'Bebas Neue'", fontSize: 13 }}>{r.n}</td>
                       <td style={{ padding: "6px 8px" }}>
-                        <span style={{ background: `${r.sc}20`, color: r.sc, padding: "2px 6px", borderRadius: 4, fontSize: 9, fontWeight: 700 }}>{r.conf}</span>
+                        <span style={{ background: `${r.sc}20`, color: r.sc, padding: "2px 6px", borderRadius: 4, fontSize: 9, fontWeight: 700 }}>{r.status}</span>
                       </td>
                       <td style={{ padding: "6px 8px", color: T.textSecondary }}>{r.pub}</td>
                     </tr>
@@ -166,7 +110,7 @@ export default function TechnicalPaper() {
             <div style={{ background: "rgba(0,0,0,0.4)", borderRadius: 8, padding: "10px 12px", border: `1px solid ${T.border}`, marginTop: 8, fontFamily: "'Nunito Sans'", fontSize: 10, color: T.textMuted, lineHeight: 1.8, whiteSpace: "pre-line" }}>
 {`Off-chain: powerball.com / usamega.com / calottery.com / texaslottery.com
            \u2192 consensus engine (2+ agree)
-On-chain:  Oracle (value / reset-risk / confidence)
+On-chain:  Oracle (value / reset-risk)
 Market:    MOON / USDC DEX pool \u2190 traders set price`}
             </div>
           </div>
@@ -182,7 +126,7 @@ Market:    MOON / USDC DEX pool \u2190 traders set price`}
           </div>
 
           {/* 5 — Liquidity & LP Economics */}
-          <div style={{ marginBottom: 18 }}>
+          <div id="liquidity" style={{ marginBottom: 18 }}>
             <h2 style={{ fontFamily: "'Montserrat'", fontSize: 12, fontWeight: 700, color: T.gold, letterSpacing: 1, marginBottom: 8, textTransform: "uppercase" }}>
               5. Liquidity & LP Economics
             </h2>
@@ -268,7 +212,7 @@ Market:    MOON / USDC DEX pool \u2190 traders set price`}
           </div>
 
           {/* 7 — Reset Mechanics & Whale Exit */}
-          <div style={{ marginBottom: 18 }}>
+          <div id="risk" style={{ marginBottom: 18 }}>
             <h2 style={{ fontFamily: "'Montserrat'", fontSize: 12, fontWeight: 700, color: T.gold, letterSpacing: 1, marginBottom: 8, textTransform: "uppercase" }}>
               7. Reset Mechanics & Whale Exit
             </h2>
@@ -294,7 +238,7 @@ Market:    MOON / USDC DEX pool \u2190 traders set price`}
               ].map((item, i) => (
                 <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 6, padding: "4px 0" }}>
                   <span style={{ color: T.gold, fontSize: 10, marginTop: 1, flexShrink: 0 }}>{"\u25B8"}</span>
-                  <span style={{ fontFamily: "'Rajdhani'", fontSize: 11, color: T.textSecondary, lineHeight: 1.4 }}>{item}</span>
+                  <span className="moon-security-copy">{item}</span>
                 </div>
               ))}
             </div>
@@ -322,16 +266,8 @@ Market:    MOON / USDC DEX pool \u2190 traders set price`}
           </div>
         </Card>
 
-        {/* Footer */}
-        <div style={{ textAlign: "center", paddingBottom: 20, paddingTop: 10 }}>
-          <div style={{ display: "flex", justifyContent: "center" }}>
-            <MoonLogo size={30} animate />
-          </div>
-          <div style={{ fontFamily: "'Montserrat'", fontSize: 10, color: "#FFFDD0", letterSpacing: 3, marginTop: 8 }}>
-            MOONBALL
-          </div>
-        </div>
       </main>
+      <SiteFooter />
     </div>
   );
 }
@@ -339,13 +275,13 @@ Market:    MOON / USDC DEX pool \u2190 traders set price`}
 function TokenomicsPanel() {
   const [expanded, setExpanded] = useState<number | null>(null);
   return (
-    <div style={{ marginTop: 18, background: T.bgCard, border: `1px solid ${T.border}`, borderRadius: 14, padding: 16 }}>
+    <div id="allocation" style={{ marginTop: 18, background: T.bgCard, border: `1px solid ${T.border}`, borderRadius: 14, padding: 16 }}>
       <h2 style={{ fontFamily: "'Montserrat'", fontSize: 12, fontWeight: 700, color: T.gold, letterSpacing: 1, marginBottom: 14, textTransform: "uppercase" }}>
         10. Token Allocation
       </h2>
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 12 }}>
-        <span style={{ fontFamily: "'Share Tech Mono', monospace", fontSize: 20, color: T.gold }}>
+        <span style={{ fontFamily: PAPER_DATA_FONT, fontSize: 20, color: T.gold }}>
           {(TOKENOMICS.totalSupply / 1_000_000).toFixed(0)}M MOON
         </span>
         <span style={{ fontSize: 11, color: T.textMuted }}>Fixed supply · minted at genesis</span>
@@ -371,7 +307,7 @@ function TokenomicsPanel() {
                 <span style={{ fontFamily: "'Rajdhani'", fontSize: 12, color: T.textPrimary }}>{b.label}</span>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontFamily: "'Share Tech Mono', monospace", fontSize: 12, color: b.color }}>{b.pct}%</span>
+                <span style={{ fontFamily: PAPER_DATA_FONT, fontSize: 12, color: b.color }}>{b.pct}%</span>
                 <span style={{ fontSize: 10, color: T.textMuted }}>{(TOKENOMICS.totalSupply * b.pct / 100 / 1_000_000).toFixed(0)}M</span>
                 <span style={{ fontSize: 10, color: T.textMuted }}>{expanded === i ? "▲" : "▼"}</span>
               </div>
@@ -391,7 +327,7 @@ function TokenomicsPanel() {
 
       <div style={{ marginTop: 14, borderTop: `1px solid ${T.border}`, paddingTop: 12 }}>
         <div style={{ fontFamily: "'Nunito Sans'", fontSize: 10, color: T.textSecondary, fontWeight: 700, letterSpacing: 1, marginBottom: 10 }}>FEE FLOW</div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 4, fontFamily: "'Share Tech Mono', monospace", fontSize: 11 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 4, fontFamily: PAPER_DATA_FONT, fontSize: 11 }}>
           <div style={{ display: "flex", justifyContent: "space-between" }}>
             <span style={{ color: T.textMuted }}>Pool swap fee</span>
             <span style={{ color: "#fff" }}>{TOKENOMICS.poolFeePct}% per swap</span>
@@ -423,7 +359,7 @@ function TokenomicsPanel() {
           {TOKENOMICS.tvlGlidePath.map((tier, i) => (
             <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span style={{ fontFamily: "'Rajdhani'", fontSize: 11, color: T.textSecondary }}>{tier.label}</span>
-              <span style={{ fontFamily: "'Share Tech Mono', monospace", fontSize: 12, color: tier.feePct === TOKENOMICS.poolFeePct ? T.gold : T.blue }}>
+              <span style={{ fontFamily: PAPER_DATA_FONT, fontSize: 12, color: tier.feePct === TOKENOMICS.poolFeePct ? T.gold : T.blue }}>
                 {tier.feePct}% fee
               </span>
             </div>
@@ -446,7 +382,7 @@ function VestingStatus({ bucket }: { bucket: (typeof TOKENOMICS.allocation)[numb
     <div style={{ marginTop: 10 }} data-testid={`vesting-${bucket.label.toLowerCase()}`}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 5 }}>
         <span style={{ fontFamily: "'Nunito Sans'", fontSize: 9, color: T.textSecondary, fontWeight: 700, letterSpacing: 1 }}>ON-CHAIN LOCK</span>
-        <span style={{ fontFamily: "'Share Tech Mono', monospace", fontSize: 10, color: v.unlockedPct > 0 ? T.gold : bucket.color }} data-testid={`text-locked-pct-${bucket.label.toLowerCase()}`}>
+        <span style={{ fontFamily: PAPER_DATA_FONT, fontSize: 10, color: v.unlockedPct > 0 ? T.gold : bucket.color }} data-testid={`text-locked-pct-${bucket.label.toLowerCase()}`}>
           {v.lockedPct.toFixed(v.lockedPct % 1 === 0 ? 0 : 1)}% locked
         </span>
       </div>
@@ -454,7 +390,7 @@ function VestingStatus({ bucket }: { bucket: (typeof TOKENOMICS.allocation)[numb
         <div style={{ width: `${v.unlockedPct}%`, background: T.gold }} />
         <div style={{ width: `${v.lockedPct}%`, background: bucket.color }} />
       </div>
-      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 5, fontFamily: "'Share Tech Mono', monospace", fontSize: 10 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 5, fontFamily: PAPER_DATA_FONT, fontSize: 10 }}>
         <span style={{ color: T.gold }}>{fmtTokens(v.unlockedTokens)} unlocked</span>
         <span style={{ color: bucket.color }}>{fmtTokens(v.lockedTokens)} locked</span>
       </div>
@@ -488,14 +424,14 @@ function PoolCalculator({ oracle }: { oracle?: OracleModel }) {
     border: `1px solid rgba(255,255,255,0.08)`,
     borderRadius: 8,
     padding: "8px 10px",
-    fontFamily: "'Share Tech Mono', monospace",
+    fontFamily: PAPER_DATA_FONT,
     fontSize: 14,
     color: T.gold,
     outline: "none",
     width: "100%",
   } as const;
   return (
-    <div style={{ marginTop: 14, background: T.bgCard, border: `1px solid ${T.border}`, borderRadius: 14, padding: 16 }}>
+    <div id="calculator" style={{ marginTop: 14, background: T.bgCard, border: `1px solid ${T.border}`, borderRadius: 14, padding: 16 }}>
       <div style={{ fontFamily: "'Montserrat'", fontSize: 12, fontWeight: 700, color: T.gold, letterSpacing: 1, marginBottom: 4, textTransform: "uppercase" }}>
         11. Pool Size Calculator
       </div>
@@ -514,7 +450,7 @@ function PoolCalculator({ oracle }: { oracle?: OracleModel }) {
       </div>
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, padding: "8px 10px", background: "rgba(0,0,0,0.3)", borderRadius: 8 }}>
         <span style={{ fontFamily: "'Rajdhani'", fontSize: 11, color: T.textMuted }}>Oracle reference scenario</span>
-        <span style={{ fontFamily: "'Share Tech Mono', monospace", fontSize: 12, color: T.gold }}>
+        <span style={{ fontFamily: PAPER_DATA_FONT, fontSize: 12, color: T.gold }}>
           {launchPrice ? formatUsd(launchPrice) + " / MOON" : "—  (oracle loading)"}
         </span>
       </div>
@@ -533,11 +469,11 @@ function PoolCalculator({ oracle }: { oracle?: OracleModel }) {
             ].map((r) => (
               <div key={r.label} style={{ background: "rgba(0,0,0,0.3)", borderRadius: 8, padding: "8px 10px" }}>
                 <div style={{ fontFamily: "'Rajdhani'", fontSize: 10, color: T.textMuted }}>{r.label}</div>
-                <div style={{ fontFamily: "'Share Tech Mono', monospace", fontSize: 14, color: "#fff", marginTop: 2 }} data-testid={r.testid}>{r.value}</div>
+                <div style={{ fontFamily: PAPER_DATA_FONT, fontSize: 14, color: "#fff", marginTop: 2 }} data-testid={r.testid}>{r.value}</div>
               </div>
             ))}
           </div>
-          <div style={{ fontFamily: "'Share Tech Mono', monospace", fontSize: 11, color: T.textPrimary, textAlign: "center", padding: "8px 0", borderTop: `1px solid ${T.border}` }}>
+          <div style={{ fontFamily: PAPER_DATA_FONT, fontSize: 11, color: T.textPrimary, textAlign: "center", padding: "8px 0", borderTop: `1px solid ${T.border}` }}>
             Seed {result.moonNeeded >= 1_000_000 ? `${(result.moonNeeded / 1_000_000).toFixed(2)}M` : Math.round(result.moonNeeded).toLocaleString()} MOON
             {" + "}
             {result.usdcNeeded >= 1_000_000 ? `$${(result.usdcNeeded / 1_000_000).toFixed(2)}M` : `$${Math.round(result.usdcNeeded).toLocaleString()}`} USDC

@@ -11,7 +11,9 @@
     "test:verifier": "tsx server/jackpot-verifier-consensus.test.ts && tsx server/jackpot-verifier-texaslottery.test.ts",
     "db:push": "drizzle-kit push",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "drizzle-kit migrate",
+    "preview:design": "tsx script/preview.ts",
+    "test:redesign": "tsx --test server/redesign.test.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
