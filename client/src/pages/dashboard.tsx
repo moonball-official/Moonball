@@ -894,6 +894,7 @@ export default function Dashboard() {
           ) : (
             <MultiCycleChart
               cycles={recentChartCycles}
+              currentDrawCount={d.drawsWithoutWinner}
               activeCycleId={
                 recentChartCycles.some((cycle) => cycle.id === activeCycleId)
                   ? activeCycleId!
@@ -1295,7 +1296,7 @@ export default function Dashboard() {
                     >
                       {cycle.winner
                         ? cycle.draws.length
-                        : Math.max(0, cycle.draws.length - 1)}{" "}
+                        : d.drawsWithoutWinner}{" "}
                       {cycle.winner && cycle.draws.length === 1 ? "draw" : "draws"}
                     </span>
                     <span

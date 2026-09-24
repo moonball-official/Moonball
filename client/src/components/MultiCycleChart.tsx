@@ -3,7 +3,7 @@ import { T } from "@/lib/constants";
 const formatMillions = (value: number) =>
   `$${value.toLocaleString("en-US", { maximumFractionDigits: 1 })}M`;
 
-export function MultiCycleChart({ cycles, activeCycleId, onSelectCycle }: any) {
+export function MultiCycleChart({ cycles, activeCycleId, onSelectCycle, currentDrawCount }: any) {
   const W = 340;
   const H = 180;
   const PAD = { top: 16, right: 12, bottom: 28, left: 36 };
@@ -326,7 +326,7 @@ export function MultiCycleChart({ cycles, activeCycleId, onSelectCycle }: any) {
       {(() => {
         const sel = cycleSegments.find((s: any) => s.id === activeCycleId);
         if (!sel) return null;
-        const drawCount = sel.winner ? sel.draws.length : Math.max(0, sel.draws.length - 1);
+        const drawCount = sel.winner ? sel.draws.length : currentDrawCount ?? Math.max(0, sel.draws.length - 1);
         return (
           <div
             style={{
