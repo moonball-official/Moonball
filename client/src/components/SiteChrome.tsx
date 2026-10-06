@@ -66,7 +66,7 @@ export function SiteFooter() {
       <div className="moon-footer-top">
         <a className="moon-brand" href="/">
           <MoonLogo size={30} animate={false} />
-          <span>moonball.</span>
+          <span>moonball<span className="moon-brand-dot">.</span></span>
         </a>
         <nav aria-label="Footer navigation">
           <a href="/dashboard">Dashboard</a>

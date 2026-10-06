@@ -452,3 +452,53 @@
     padding: 17px !important;
   }
 }
+
+/* Market-first dashboard, using the redesigned site's existing colors and type. */
+.moon-dashboard-main > .market-dashboard-intro { grid-column: 1 / -1; display: block; margin-bottom: 0; border-bottom: 0; padding-bottom: 0; }
+.moon-market-overview, .moon-market-disclosure { grid-column: 1 / -1; min-width: 0; }
+.moon-market-overview { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(260px, 1fr); gap: 22px; align-items: start; }
+.moon-market-card, .moon-next-draw-card { padding: 25px !important; }
+.moon-market-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; color: #f3f0e8; font-size: 14px; font-weight: 700; }
+.moon-market-status { padding: 5px 10px; color: var(--moon-gold); border: 1px solid #f4bc5160; border-radius: 999px; font-size: 11px; font-weight: 600; }
+.moon-market-price { margin: 16px 0 8px; color: #f3f0e8; font-size: clamp(44px, 7vw, 62px); font-weight: 800; letter-spacing: -.05em; line-height: 1.1; }
+.moon-market-stats { display: flex; flex-wrap: wrap; gap: 22px; color: #aeb6c5; font-size: 13px; }
+.moon-market-stats strong { margin-left: 8px; color: #e3e5e9; }
+.moon-market-chart { min-height: 155px; margin: 20px 0; padding: 24px 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; border-block: 1px solid #ffffff15; }
+.moon-market-chart strong { color: #e8e9ec; font-size: 16px; }
+.moon-market-chart p, .moon-market-note { color: #aeb6c5; font-size: 13px; line-height: 1.6; }
+.moon-market-chart p { max-width: 340px; margin: 8px 0 0; }
+.moon-market-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.moon-market-actions button { min-height: 48px; justify-content: center; }
+.moon-market-actions button:disabled { opacity: .6; cursor: not-allowed; }
+.moon-market-sell { color: #c3c8d1; background: #ffffff0a; border: 1px solid #ffffff30; border-radius: 7px; font-size: 14px; font-weight: 700; }
+.moon-market-note { margin: 10px 0 4px; }
+.moon-market-link { color: var(--moon-gold); text-decoration: underline; text-underline-offset: 4px; padding: 8px 0; font-size: 13px; }
+.moon-market-context { display: grid; gap: 22px; min-width: 0; }
+.moon-market-context .moon-dashboard-highlight { width: 100%; flex-basis: auto; }
+.moon-market-context .moon-next-draw-card > p:last-child { color: #aeb6c5; font-size: 13px; margin-top: 15px; text-align: center; }
+.moon-market-disclosure { border-top: 1px solid #ffffff20; padding-top: 3px; }
+.moon-market-disclosure > summary { padding: 20px 4px; cursor: pointer; color: #f2f1ed; font-size: 19px; font-weight: 700; list-style-position: inside; }
+.moon-market-disclosure > summary span { display: block; margin: 6px 0 0 22px; color: #aeb6c5; font-size: 13px; font-weight: 400; }
+.moon-market-disclosure > summary:focus-visible, .moon-market-link:focus-visible { outline: 2px solid var(--moon-gold); outline-offset: 4px; }
+.moon-market-disclosure-content { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; padding: 4px 0 22px; }
+.moon-market-disclosure-content > h2, .moon-market-disclosure-content > p, .moon-market-doc-links { grid-column: 1 / -1; }
+.moon-market-disclosure-content > h2 { margin: 20px 0 0; color: #f2f1ed; font-family: "Nunito Sans", sans-serif; font-size: 20px; }
+.moon-market-disclosure-content > p { margin: 0; }
+.moon-market-disclosure-content > div { min-width: 0; }
+.moon-market-disclosure-content .rounded-xl { margin: 0 !important; height: 100%; }
+.moon-market-doc-links { display: flex; gap: 20px; flex-wrap: wrap; }
+.moon-market-doc-links a { color: var(--moon-gold); text-decoration: underline; text-underline-offset: 4px; }
+.moon-market-about .moon-market-disclosure-content > div { grid-column: 1 / -1; }
+.moon-market-about .moon-market-disclosure-content > div > .rounded-xl { max-width: none; }
+.moon-dashboard-main [data-testid="text-market-price-advanced"] { font-size: 27px !important; }
+@media (max-width: 760px) {
+  .moon-market-overview { grid-template-columns: minmax(0, 1fr); gap: 15px; }
+  .moon-market-context { grid-template-columns: minmax(0, 1fr); gap: 15px; }
+  .moon-market-card, .moon-next-draw-card { padding: 19px !important; }
+  .moon-market-chart { min-height: 105px; margin: 15px 0; }
+  .moon-market-disclosure-content { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  .moon-market-disclosure-content > h2, .moon-market-disclosure-content > p, .moon-market-doc-links { grid-column: auto; }
+  .moon-market-disclosure-content > div, .moon-market-about .moon-market-disclosure-content > div { grid-column: auto; }
+  .moon-market-context .moon-dashboard-highlight strong { font-size: 40px; }
+}
+.moon-dashboard-main > div:has(> .rounded-xl) { grid-column: 1 / -1; }

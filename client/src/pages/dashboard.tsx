@@ -325,19 +325,47 @@ export default function Dashboard() {
     <div className="moon-site moon-dashboard">
       <SiteHeader active="dashboard" />
       <main id="main" className="moon-inner-main moon-dashboard-main">
-        <div className="moon-inner-intro moon-dashboard-intro">
-          <div>
-            <p className="moon-eyebrow"><span className="moon-status-dot" /> LIVE JACKPOT DATA</p>
-            <h1>Jackpot dashboard<span className="moon-brand-dot">.</span></h1>
-            <p>Follow the Powerball cycle, explore MOON's reference value, and see what the market is doing.</p>
-          </div>
+        <div className="moon-inner-intro moon-dashboard-intro market-dashboard-intro">
+          <p className="moon-eyebrow"><span className="moon-status-dot" /> LIVE JACKPOT DATA</p>
+          <h1>MOON market<span className="moon-brand-dot">.</span></h1>
+          <p>A market tied to Powerball activity. Follow the jackpot and see what MOON is worth.</p>
+        </div>
+
+        <section className="moon-market-overview" aria-label="MOON market and Powerball drawing">
+          <Card className="moon-market-card">
+            <div className="moon-market-heading"><span>MOON / USDC</span><span className="moon-market-status">{MOON_V2.marketLive ? "Market data unavailable" : "Pre-launch"}</span></div>
+            <div className="moon-market-price" data-testid="text-market-price">{MOON_V2.marketLive ? "—" : "Pre-launch"}</div>
+            <div className="moon-market-stats"><span>24h change <strong>—</strong></span><span>24h volume <strong>—</strong></span></div>
+            <div className="moon-market-chart" role="status">
+              <strong>MOON price history</strong>
+              <p>{MOON_V2.marketLive ? "Market price data is not available yet." : "Price history will appear once MOON trading is live."}</p>
+            </div>
+            <div className="moon-market-actions" aria-describedby="moon-trading-status">
+              <button className="moon-button" disabled data-testid="button-buy-moon">Buy MOON</button>
+              <button className="moon-market-sell" disabled data-testid="button-sell-moon">Sell MOON</button>
+            </div>
+            <p className="moon-market-note" id="moon-trading-status">{MOON_V2.marketLive ? "Trading is not available in this dashboard." : "Trading opens after launch. Join the waitlist for updates."}</p>
+            <button className="moon-market-link" onClick={() => scrollToRef(waitlistRef)}>Join the waitlist →</button>
+          </Card>
+          <aside className="moon-market-context">
           <div className="moon-dashboard-highlight">
             <span>Estimated annuitized jackpot</span>
             <strong>${d.estimated}<small> million</small></strong>
             <span>Cash value: ${d.cashValue}M</span>
           </div>
-        </div>
+            <Card className="moon-next-draw-card">
+              <SectionLabel icon="⏱" text="Next Drawing" as="h2" />
+              <Countdown targetISO={nextDrawISO} />
+              <p>{d.nextDraw} — {d.nextDrawTime}</p>
+            </Card>
+          </aside>
+        </section>
 
+        <details className="moon-market-disclosure" data-testid="advanced-market-data">
+          <summary>Advanced Market Data<span>Oracle references, risk, and Powerball history</span></summary>
+          <div className="moon-market-disclosure-content">
+            <h2>Market and oracle data</h2>
+            <p className="moon-market-note">Oracle values are informational references. They do not set or guarantee MOON’s market price.</p>
         {/* ── Oracle Reference Value ── */}
         <div>
           <Card glow style={{ marginBottom: 14, padding: "10px 14px" }}>
@@ -372,7 +400,7 @@ export default function Dashboard() {
                   MARKET PRICE
                 </div>
                 <div
-                  data-testid="text-market-price"
+                  data-testid="text-market-price-advanced"
                   style={{
                     fontFamily: "'Bebas Neue'",
                     fontSize: 34,
@@ -522,6 +550,7 @@ export default function Dashboard() {
             </div>
           </Card>
         </div>
+
 
         {/* ── Reference Value ── */}
         <Card style={{ marginBottom: 14 }}>
@@ -854,6 +883,7 @@ export default function Dashboard() {
           })()}
         </Card>
 
+
         {/* ── Chart ── */}
         <Card style={{ marginBottom: 14 }}>
           <SectionLabel icon="📈" text="Jackpot History" as="h2" />
@@ -908,23 +938,6 @@ export default function Dashboard() {
           </p>
         </Card>
 
-        {/* ── Countdown ── */}
-        <Card glow style={{ marginBottom: 14 }}>
-          <SectionLabel icon="⏱" text="Next Drawing" as="h2" />
-          <Countdown targetISO={nextDrawISO} />
-          <div
-            style={{
-              textAlign: "center",
-              marginTop: 12,
-              fontFamily: "'Nunito Sans'",
-              fontSize: 11,
-              color: T.textMuted,
-              letterSpacing: 0.5,
-            }}
-          >
-            {d.nextDraw} — {d.nextDrawTime}
-          </div>
-        </Card>
 
         {/* ── Draw Info ── */}
         <Card glow style={{ marginBottom: 14 }}>
@@ -1402,6 +1415,14 @@ export default function Dashboard() {
           </div>
         </Card>
 
+
+          </div>
+        </details>
+
+        <details className="moon-market-disclosure moon-market-about" data-testid="protocol-about">
+          <summary>About, risks & protocol details<span>How Moonball works and what to know before trading</span></summary>
+          <div className="moon-market-disclosure-content">
+            <nav className="moon-market-doc-links" aria-label="Moonball information"><a href="/protocol">Protocol details →</a><a href="/technical-paper">Technical paper →</a></nav>
         <Card style={{ marginBottom: 14 }}>
           <h2 style={{ fontSize: 18, marginBottom: 10 }}>
             Understand the reference
@@ -1416,6 +1437,10 @@ export default function Dashboard() {
             Read the model and risks →
           </a>
         </Card>
+
+
+          </div>
+        </details>
 
         {/* ── Waitlist ── */}
         <div ref={waitlistRef}>
