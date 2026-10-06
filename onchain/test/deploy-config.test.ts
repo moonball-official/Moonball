@@ -4,6 +4,7 @@ import * as os from "os";
 import * as path from "path";
 import {
   assertTwoOfThreeSafeShape,
+  assertSafeShapeForNetwork,
   OFFICIAL_USDC,
   resolveDeploymentConfig,
 } from "../scripts/deploy-config";
@@ -139,6 +140,25 @@ describe("deployment configuration guards", () => {
         "0x0000000000000000000000000000000000000000",
       ])
     ).to.throw("zero owner");
+  });
+
+  it("accepts 1-of-3 on Base Sepolia only, while preserving the mainnet 2-of-3 gate", () => {
+    const owners = [DEPLOYER, UPDATER, RECIPIENT];
+    expect(assertSafeShapeForNetwork("baseSepolia", 1n, owners)).to.equal("1-of-3");
+    expect(assertSafeShapeForNetwork("baseSepolia", 2n, owners)).to.equal("2-of-3");
+    expect(() => assertSafeShapeForNetwork("base", 1n, owners)).to.throw(
+      "must be a 2-of-3 Safe"
+    );
+    expect(assertSafeShapeForNetwork("base", 2n, owners)).to.equal("2-of-3");
+    expect(() => assertSafeShapeForNetwork("baseSepolia", 1n, owners.slice(0, 2))).to.throw(
+      "must be a 1-of-3 or 2-of-3 Safe"
+    );
+    expect(() => assertSafeShapeForNetwork("baseSepolia", 1n, [DEPLOYER, UPDATER, UPDATER])).to.throw(
+      "duplicate owners"
+    );
+    expect(() => assertSafeShapeForNetwork("baseSepolia", 1n, [DEPLOYER, UPDATER, "0x0000000000000000000000000000000000000000"])).to.throw(
+      "zero owner"
+    );
   });
 
   it("archives an existing deployment record before replacing it", () => {

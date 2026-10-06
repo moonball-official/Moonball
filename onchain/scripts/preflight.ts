@@ -7,7 +7,7 @@
  */
 import { ethers, network } from "hardhat";
 import {
-  assertTwoOfThreeSafeShape,
+  assertSafeShapeForNetwork,
   resolveDeploymentConfig,
 } from "./deploy-config";
 import { resolvePreflightDeployer } from "./preflight-deployer";
@@ -59,6 +59,7 @@ async function main() {
     throw new Error("Configured USDC contract does not report 6 decimals.");
   }
 
+  let safeShape: "1-of-3" | "2-of-3" | undefined;
   if (config.safe) {
     const safeCode = await ethers.provider.getCode(config.safe);
     if (safeCode === "0x") throw new Error("SAFE_ADDRESS has no contract code.");
@@ -67,7 +68,7 @@ async function main() {
       safe.getThreshold(),
       safe.getOwners(),
     ]);
-    assertTwoOfThreeSafeShape(threshold, owners);
+    safeShape = assertSafeShapeForNetwork(network.name, threshold, owners);
   }
 
   console.log("Moonball deployment preflight PASSED (read-only; no transactions sent).");
@@ -82,6 +83,11 @@ async function main() {
   console.log(`Staleness:        ${config.staleness}s`);
   if (!config.safe) {
     console.warn("Warning: no Safe configured; acceptable for testnet rehearsal only.");
+  } else {
+    console.log(`Safe:             ${config.safe} (${safeShape})`);
+    if (safeShape === "1-of-3") {
+      console.warn("Warning: 1-of-3 is accepted for Base Sepolia rehearsal only; any single owner can act alone. Base mainnet requires 2-of-3.");
+    }
   }
 }
 

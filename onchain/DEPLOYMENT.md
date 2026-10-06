@@ -16,9 +16,10 @@ MOON/USDC DEX pool. The oracle publishes a **reference value** only.
 > ⚠️ Testnet first. This is an unaudited reference implementation. Do **not**
 > deploy to Base mainnet or use real funds before a professional audit.
 
-> ⚠️ The addresses currently stored in `deployments/baseSepolia.json` are
-> **DEPRECATED / NOT CURRENT MOONBALL DEPLOYMENT**. Do not publish them as the
-> current contracts. The file remains in the repository for traceability.
+> ⚠️ `deployments/baseSepolia.json` records a verified Base Sepolia `candidate`,
+> not a production deployment. Obsolete addresses are retained under
+> `deployments/history/` with `deprecated` status for traceability. Do not present
+> any testnet address as a Base mainnet or production contract.
 
 ---
 
@@ -28,7 +29,8 @@ MOON/USDC DEX pool. The oracle publishes a **reference value** only.
   - Base Sepolia **ETH** for gas ([Base faucet](https://docs.base.org/tools/network-faucets)).
   - Base Sepolia **USDC** if you intend to seed a MOON/USDC pool
     (Circle faucet, token `0x036CbD53842c5426634e7929541eC2318f3dCF7e`).
-- A Moonball-controlled **2-of-3 Safe** address to own the oracle and production
+- A Moonball-controlled Safe address. Base Sepolia rehearsal may use **1-of-3**
+  or **2-of-3**; Base mainnet requires **2-of-3** to own the oracle and production
   protocol assets. A timelock is optional for the MVP.
 - Optionally a dedicated RPC URL (the scripts default to the public
   `https://sepolia.base.org`).
@@ -43,7 +45,7 @@ commands **from the `onchain/` directory**.
 ## 1. Deploy to Base Sepolia
 
 First run the read-only preflight. It validates the network, deployer balance,
-official USDC, configuration, and any configured 2-of-3 Safe without sending a
+official USDC, configuration, and any configured Safe without sending a
 transaction:
 
 ```bash
@@ -76,7 +78,7 @@ Recommended env for a real testnet deploy:
 USDC_ADDRESS=0x036CbD53842c5426634e7929541eC2318f3dCF7e   # Circle USDC on Base Sepolia
 UPDATER_ADDRESS=0xYourBridgeKeeper...                       # required; limited operational role
 SUPPLY_RECIPIENT=0xYourTreasuryWallet...                    # required; receives the fixed 100M supply
-SAFE_ADDRESS=0xYourTwoOfThreeSafe...                        # optional on testnet; required on Base mainnet
+SAFE_ADDRESS=0xYourSafe...                                  # optional on testnet; 1-of-3 or 2-of-3 there, required 2-of-3 on mainnet
 # Publish the initial jackpot through the bridge when the updater is separate.
 ```
 
@@ -176,9 +178,12 @@ When the 2-of-3 Safe collects fees earned by Moonball-owned POL positions:
 
 This is not Uniswap v3's native protocol fee and is not a per-swap router skim.
 The splitter must document and test remainder handling so the aggregate result
-is 12/88 at token precision. The splitter is not included in the current
-implementation and must be built and audited before a current deployment can be
-considered production-ready.
+is 12/88 at token precision. `MoonballPOLFeeSplitter` now implements that policy
+with per-token cumulative accounting, and `OfficialMarketRegistry` validates the
+Safe-designated pool against the canonical Uniswap v3 factory. Both contracts
+are source-only, unaudited, and undeployed. They must be independently audited,
+deployed under the 2-of-3 Safe, and exercised through a complete Base Sepolia
+collection rehearsal before any deployment can be considered production-ready.
 
 ---
 
@@ -263,10 +268,12 @@ Verify on-chain after deploy:
 ## 7. Confirm oracle ownership by the Safe
 
 If `SAFE_ADDRESS` was supplied during public-network deployment, `deploy.ts`
-validates that it reports threshold 2 with three owners and installs it as the
-oracle owner in the constructor. Confirm the recorded and on-chain owner before
-continuing. The token is immutable and ownerless — there is nothing to transfer
-on it.
+validates its owners and threshold, then installs it as the oracle owner in the
+constructor. Base Sepolia alone accepts threshold 1 or 2 with three distinct
+owners; Base mainnet accepts only threshold 2 with three distinct owners. A
+1-of-3 rehearsal Safe lets any one owner act alone. Confirm the recorded and
+on-chain owner before continuing. The token is immutable and ownerless — there
+is nothing to transfer on it.
 
 For an earlier testnet deployment made without `SAFE_ADDRESS`, transfer ownership
 after verifying the bridge works end-to-end:
@@ -302,7 +309,7 @@ unchanged.
 - [ ] Professional smart-contract audit completed and findings resolved.
 - [ ] Oracle admin role held by the Moonball 2-of-3 Safe — no permanent EOA owner.
 - [ ] Keeper key isolated, rotatable via `setAuthorizedUpdater`, monitored for balance.
-- [ ] POL fee-splitter built and audited; collection tests prove 12% treasury / 88% POL with no added trader fee.
+- [ ] POL fee-splitter independently audited; unit tests already prove cumulative 12% treasury / 88% POL with no added trader fee.
 - [ ] Safe owns every production POL NFT and can revoke or replace operational components.
 
 **Token & allocation**

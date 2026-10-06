@@ -151,15 +151,16 @@ application recognizes as official.
 
 ### 10. Legacy Base Sepolia deployments
 
-The addresses in `onchain/deployments/baseSepolia.json`, deployed on 2026-06-08,
-belong to an obsolete implementation and are retained only for traceability.
-They are:
+The addresses deployed on 2026-06-08 belong to an obsolete implementation and
+are retained only for traceability in
+`onchain/deployments/history/baseSepolia-2026-09-11T01-26-27-796Z.json`. They are:
 
 > **DEPRECATED / NOT CURRENT MOONBALL DEPLOYMENT**
 
 Applications and deployment procedures must not present those addresses as the
-current Moonball contracts. No historical on-chain deployment needs to be
-destroyed or hidden.
+current Moonball contracts. `onchain/deployments/baseSepolia.json` may contain a
+separately verified testnet candidate; candidate status does not mean production
+approval. No historical on-chain deployment needs to be destroyed or hidden.
 
 ## Implementation gates
 

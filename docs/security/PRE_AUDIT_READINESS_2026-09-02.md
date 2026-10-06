@@ -1,6 +1,7 @@
 # Moonball Pre-Audit Readiness Review — 2026-09-02
 
 - **Status:** Internal engineering review complete
+- **Last updated:** 2026-09-16 for Phase 3 source and test status
 - **Release posture:** Local and Base Sepolia rehearsal only
 - **Not a substitute for:** an independent professional smart-contract audit
 
@@ -8,6 +9,7 @@
 
 - fixed-supply `MoonballToken` and vesting wallet;
 - Phase 2 `JackpotOracle` state, roles, pause, freshness, and replay rules;
+- Phase 3 official-market registry and POL fee-splitter source and unit tests;
 - multi-source verifier, public API provenance, and bridge validation;
 - deployment, ownership, vesting, and verification scripts; and
 - dependency lockfile and production dependency advisories.
@@ -63,9 +65,11 @@
    Hardhat 2 toolchain. They are excluded from the production application audit,
    but the deployment workstation must be isolated and the Hardhat 3 migration
    evaluated before mainnet signing.
-6. **Market infrastructure remains incomplete.** The official Uniswap v3 pool,
-   official-market registry, POL operational controls, and audited 12/88 POL fee
-   splitter are separate implementation gates.
+6. **Market infrastructure remains incomplete.** Phase 3 now includes a
+   canonical-factory-validated official-market registry and cumulative 12/88 POL
+   fee splitter, but both remain unaudited and undeployed. The official Uniswap
+   v3 pool, POL NFT custody, collection integration, Safe ownership, and full
+   Base Sepolia rehearsal remain separate implementation gates.
 7. **Legal and regulatory review remains required** for the jackpot-referenced
    event-market design.
 
